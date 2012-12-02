@@ -1,0 +1,64 @@
+<?xml version="1.0" ?>
+<makefile>
+  <requires version="0.2.1"/>
+
+
+  <set var="OPTIMIZE_FLAG">
+    <if cond="BUILD=='debug'">off</if>
+    <if cond="BUILD=='release'">speed</if>
+  </set>
+
+  <set var="BUILDDIR">obj</set>
+
+  <set-srcdir>src</set-srcdir>
+  
+  <action id="libpropeller" is-phony="true">
+    <command>cd deps/libpropeller &amp;&amp; make</command>
+  </action>
+  
+  <action id="lua" is-phony="true">
+      <command>cd deps/lua &amp;&amp; make</command>
+  </action>
+  
+  
+  
+  <exe id="breeze" >
+
+
+    <depends>libpropeller</depends>
+    <depends>lua</depends>
+    
+    <runtime-libs>static</runtime-libs>
+    <include>deps/libpropeller/include</include>
+    <include>deps/lua/src</include>
+    
+    
+    
+    
+    <if cond="FORMAT=='gnu'">
+      <cppflags cond="BUILD=='debug'">-D_DEBUG -rdynamic</cppflags>
+    </if>
+    <if cond="FORMAT=='msvc'">
+      <cppflags cond="BUILD=='debug'">/D_DEBUG -g </cppflags>
+    </if>
+    
+    <debug-info cond="BUILD=='debug'">on</debug-info>
+    <optimize>$(OPTIMIZE_FLAG)</optimize>
+     <sources>
+      breeze.cpp
+      main.cpp
+      trace.cpp
+    </sources>
+    
+    <threading>multi</threading>
+    <lib-path>deps/libpropeller/bin</lib-path>
+    <lib-path>deps/lua/src</lib-path>
+    
+    <sys-lib>propeller</sys-lib>    
+    <sys-lib>lua</sys-lib>    
+     
+
+    <install-to>$(BINDIR)</install-to>
+    
+  </exe>
+</makefile>

@@ -1,0 +1,66 @@
+<?xml version="1.0" ?>
+<makefile>
+  <requires version="0.2.1"/>
+
+
+  <set var="OPTIMIZE_FLAG">
+    <if cond="BUILD=='debug'">off</if>
+    <if cond="BUILD=='release'">speed</if>
+  </set>
+
+  <set var="BUILDDIR">obj</set>
+
+  <set-srcdir>src</set-srcdir>
+  
+  <action id="libevent" is-phony="true">
+    <command>cd deps/libevent &amp;&amp; make</command>
+  </action>
+  
+  <dll id="propeller" >
+
+    <dirname>bin</dirname>
+    <depends>libevent</depends>
+    <libname>propeller</libname>
+        
+    <dirname>bin</dirname>
+    <runtime-libs>static</runtime-libs>
+    <include>include</include>
+    <include>deps/libevent</include>
+    
+    
+    <if cond="FORMAT=='gnu'">
+      <cppflags cond="BUILD=='debug'">-D_DEBUG -rdynamic</cppflags>
+    </if>
+    <if cond="FORMAT=='msvc'">
+      <cppflags >/DPROPELLER_DLL </cppflags>
+      <cppflags cond="BUILD=='debug'">/D_DEBUG -g </cppflags>
+    </if>
+    
+    <debug-info cond="BUILD=='debug'">on</debug-info>
+    <optimize>$(OPTIMIZE_FLAG)</optimize>
+     <sources>
+      propeller.cpp
+      HttpProtocol.cpp
+      Connection.cpp
+      Server.cpp
+      system.cpp
+      trace.cpp
+      event.cpp
+    </sources>
+    <headers>../include/propeller.h</headers>
+    <threading>multi</threading>
+    <lib-path>deps/libevent/.libs</lib-path>
+    <sys-lib>event</sys-lib>    
+     
+    <if cond="FORMAT=='gnu'">
+      <sys-lib>event_pthreads</sys-lib>
+    </if>
+
+    <install-to>$(LIBDIR)</install-to>
+    <install-headers-to>$(INCLUDEDIR)</install-headers-to>
+    
+  </dll>
+   <subproject id="test">
+    <dir>test</dir>
+  </subproject>      
+</makefile>
