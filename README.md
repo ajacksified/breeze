@@ -18,7 +18,7 @@ edit and save file helloworld.lua:
 
     HelloWorldHandler = class('HelloWorldHandler', Handler)
 
-    function TestHandler:get()
+    function HelloWorldHandler:get()
         response.body = 'Hello world'
     end 
 
