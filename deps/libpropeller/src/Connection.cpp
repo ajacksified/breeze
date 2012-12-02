@@ -16,8 +16,6 @@ limitations under the License.
 
 #include "Connection.h"
 
-std::string Request::s_empty;
-
 Connection::Connection( Server::ConnectionThread& thread, Server& server, sys::Socket* socket )
  : libevent::Connection( socket ), m_request( NULL ), m_thread( thread ), m_server( server ), m_ref( 0 ), m_delete( false )
  {
@@ -68,7 +66,8 @@ void Connection::onRead( )
         //
         //  set close connection flag if needed
         //
-        if ( m_request->header( "connection" ).compare( "close" ) == 0 ) ///|| strstr( m_request->protocol(), "1.0" ) )
+        const char* header = m_request->header( "connection" );
+        if ( header && strcmp( header, "close" ) == 0 ) ///|| strstr( m_request->protocol(), "1.0" ) )
         {
             m_close = true;
         }
@@ -116,23 +115,23 @@ Request::~Request()
 
     if ( m_body )
     {
-        free( m_body );
+        delete[] m_body;
     }
 }
 
-const std::string& Request::header( const std::string& name ) const
+const char* Request::header( const char* name ) const
 {
-    std::string lowercaseName;
-    std::transform( name.begin( ), name.end( ), lowercaseName.begin( ), ::tolower );
-
+    std::string lowercaseName = name;
+    std::transform( lowercaseName.begin( ), lowercaseName.end( ), lowercaseName.begin( ), ::tolower );
+    
     HeaderMap::const_iterator i = m_headers.find( lowercaseName );
 
     if ( i != m_headers.end( ) )
     {
-        return i->second;
+       return i->second.c_str();
     }
 
-    return s_empty;
+    return NULL;
 }
 
 void Request::parse( )
@@ -170,79 +169,80 @@ void Request::parse( )
         free( requestLine );
     }
 
-
-    //
-    //  see if we have all headers
-    //
-    if ( m_connection.searchInput( "\r\n\r\n", 4 ) == -1 )
+    if ( !m_parsedHeader )
     {
-        throw HttpProtocol::Ok;
-    }
-
-    //
-    //	parse headers
-    //
-    for ( ;; )
-    {
-
-        char* line;
-
-        line = m_connection.readLine();
-
-        if ( !line )
+        //
+        //  see if we have all headers
+        //
+        if ( m_connection.searchInput( "\r\n\r\n", 4 ) == -1 )
         {
-            free( line );
-            throw HttpProtocol::BadRequest;
+            throw HttpProtocol::Ok;
         }
 
-        const char* separator = strstr( line, ": " );
-
-        if ( !separator )
+        //
+        //	parse headers
+        //
+        for (;; )
         {
+
+            char* line;
+
+            line = m_connection.readLine( );
+
+            if ( !line )
+            {
+                free( line );
+                throw HttpProtocol::BadRequest;
+            }
+
+            const char* separator = strstr( line, ": " );
+
+            if ( !separator )
+            {
+                free( line );
+                break;
+            }
+
+            std::string name;
+            unsigned long nameLength = separator - line;
+            name.append( line, nameLength );
+            const char* end = line + strlen( line );
+            unsigned int separatorLength = 2;
+            std::string value;
+            unsigned long valueLength = end - ( separator + separatorLength );
+            value.append( separator + separatorLength, valueLength );
+
+            //
+            //  lowercase
+            //
+            std::transform( name.begin( ), name.end( ), name.begin( ), ::tolower );
+            std::transform( value.begin( ), value.end( ), value.begin( ), ::tolower );
+
+            m_headers[ name ] = value;
             free( line );
-            break;
+            TRACE( "%s: %s", name.c_str( ), value.c_str( ) );
         }
-
-        std::string name;
-        unsigned long nameLength = separator - line;
-        name.append( line, nameLength );
-        const char* end = line + strlen( line);
-        unsigned int separatorLength = 2;
-        std::string value;
-        unsigned long valueLength = end - ( separator + separatorLength );
-        value.append( separator + separatorLength, valueLength );
-
-        //
-        //  lowercase
-        //
-        std::transform( name.begin( ), name.end( ), name.begin( ), ::tolower );
-        std::transform( value.begin( ), value.end( ), value.begin( ), ::tolower );
-
-        m_headers[ name ] = value;
-        free( line );
-        TRACE( "%s: %s", name.c_str(), value.c_str() );
     }
 
+    m_parsedHeader = true;
 
-    
     //	body is required for PUT and POST method requests
     //
     bool needBody = m_method[0] == 'P';
-
 
     //
     //	check request headers
     //
     if ( needBody )
     {
-        std::string length = header( "Content-Length" );
+        const char* length = header( "content-length" );
 
-        if ( length.size( ) )
+        if ( length )
         {
             //
             //	Get body length
             //
-            sscanf( length.c_str( ), "%d", &m_bodyLength );
+            sscanf( length, "%d", &m_bodyLength );
         }
         else
         {
@@ -252,27 +252,27 @@ void Request::parse( )
             throw HttpProtocol::LengthRequired;
         }
 
-        if ( m_connection.inputLength( ) < m_bodyLength )
+        if ( !m_body )
+        {
+            m_body = new char[ m_bodyLength + 1];
+            m_body[ m_bodyLength ] = 0;
+        }
+        
+        m_read += m_connection.read( m_body + m_read, m_bodyLength - m_read );
+
+        if ( m_read != m_bodyLength )
         {
             //
-            //	assume that we did not get the full request. we will wait for more data
+            //  wait for more data
             //
             throw HttpProtocol::Ok;
-        }
-
-
-        unsigned int read = m_connection.read( m_body, m_bodyLength );
-
-        if ( read != m_bodyLength )
-        {
-            throw HttpProtocol::BadRequest;
         }
     }
 }
 
 
 Request::Request( Connection& connection )
-: m_bodyLength( 0 ), m_body( NULL ), m_connection( connection )
+: m_bodyLength( 0 ), m_body( NULL ), m_connection( connection ), m_parsedHeader( false ), m_read( 0 )
 {
     TRACE_ENTERLEAVE( );
 
@@ -281,7 +281,6 @@ Request::Request( Connection& connection )
     m_uri[0] = 0;
     m_protocol[0] = 0;
     m_header[0] = 0;
-    m_empty[0] = 0;
 
 }
 

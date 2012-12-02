@@ -34,7 +34,8 @@ PROPELLER_APIEXP short PROPELLER_API propeller_serverStart( void* server )
     {
         ( ( Server* ) server )->start( );
         
-    } catch (...)
+    }
+    catch (...)
     {
         return PROPELLER_STATUS_FAILURE;
     }
@@ -105,6 +106,13 @@ PROPELLER_APIEXP short PROPELLER_API propeller_serverSetOnRequestCallback( void*
     return PROPELLER_STATUS_SUCCESS;
 }
 
+PROPELLER_APIEXP short PROPELLER_API propeller_serverSetAfterRequestCallback( void* server, AfterRequest callback, void* data )
+{
+    ( ( Server* ) server )->setAfterRequestCallback( ( Server::AfterRequest ) callback, data );
+
+    return PROPELLER_STATUS_SUCCESS;
+}
+
 PROPELLER_APIEXP short PROPELLER_API propeller_serverSetOnThreadStartedCallback( void* server, OnThreadStarted callback, void* data )
 {
     ( ( Server* ) server )->setOnThreadStartedCallback( ( Server::OnThreadStarted ) callback, data );
@@ -131,7 +139,7 @@ PROPELLER_APIEXP const char* PROPELLER_API propeller_requestGetUri( const void* 
 
 PROPELLER_APIEXP const char* PROPELLER_API propeller_requestGetHeader( const void* request, const char* name )
 {
-    return ( ( Request* )request )->header( name ).c_str( );
+    return ( ( Request* )request )->header( name );
 }
 
 PROPELLER_APIEXP const char* PROPELLER_API propeller_requestGetMethod( const void* request )

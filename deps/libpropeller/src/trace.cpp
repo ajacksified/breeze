@@ -25,7 +25,7 @@ limitations under the License.
 #include <stdarg.h>
 
 
-#ifdef _DEBUG
+#ifdef _PROPELLER_DEBUG
 static unsigned long TRACE_LEVEL = TRACE_LEVEL_INFO;
 #else
 static unsigned long TRACE_LEVEL = TRACE_LEVEL_ERROR;
@@ -51,9 +51,18 @@ void traceText ( const char* scope, unsigned long level, const char *format, ...
         //
         memset( &temp, 0, sizeof( temp ) );
 
-        char time[32] = "0";
-        sprintf( time, "%u ", sys::General::getTime( ) );
-        strcat( temp, time );
+        
+
+        if ( level <= TRACE_LEVEL_ERROR )
+        {
+            strcat( temp, "*Error*: " );
+        }
+        else
+        {
+            char time[32] = "0";
+            sprintf( time, "%u ", sys::General::getTime( ) );
+            strcat( temp, time );
+        }
 
         if ( scope )
         {
@@ -61,10 +70,7 @@ void traceText ( const char* scope, unsigned long level, const char *format, ...
         }
 
 
-        if ( level <= TRACE_LEVEL_ERROR )
-        {
-            strcat( temp, "*Error*: " );
-        }
+        
 
 
 

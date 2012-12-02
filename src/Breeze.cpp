@@ -278,6 +278,8 @@ void Breeze::loadLibraries( lua_State* lua )
         {NULL, NULL}
     };
 
+    luaL_register( lua, "breezeApi", functions );
+
      //
      // modify package search path
      //
@@ -292,7 +294,7 @@ void Breeze::loadLibraries( lua_State* lua )
      lua_setfield( lua, -2, "path" );
      lua_pop( lua, 1 );
 
-    luaL_register( lua, "breezeApi", functions );
+    
   }
 
 

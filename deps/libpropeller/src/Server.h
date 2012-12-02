@@ -58,6 +58,8 @@ public:
     //
     typedef void ( API_CALL *OnRequest ) ( const Request* request, Response* response, void* data, void* threadData );
 
+    typedef void ( API_CALL *AfterRequest ) ( void* data, void* threadData );
+
     //
     //  Thread callbacks
     //
@@ -87,6 +89,21 @@ public:
     {
         return m_onRequestCallback;
     }
+
+
+    const Callback& afterRequestCallback() const
+    {
+        return m_afterRequestCallback;
+    }
+
+
+    void setAfterRequestCallback( AfterRequest callback, void* data )
+    {
+        m_afterRequestCallback.callback = ( void* ) callback;
+        m_afterRequestCallback.data = data;
+    }
+
+
 
     const Callback& onThreadStartedCallback() const
     {
@@ -261,8 +278,10 @@ private:
     unsigned int m_connectionWriteTimeout;
     
     Callback m_onRequestCallback;
+    Callback m_afterRequestCallback;
     Callback m_onThreadStartedCallback;
     Callback m_onThreadStoppedCallback;
+
 
     unsigned int m_poolThreadCount;
     ProcessPool m_pool;

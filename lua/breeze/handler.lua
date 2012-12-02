@@ -9,8 +9,10 @@ end
 
 function Handler:after()
     response:setStatus(response.status)
-    breeze.logger:info("setting body %s", response.body)
-    response:setBody(response.body)
+    
+    if response.type == 'text' then response:setHeader('Content-Type', 'text/plain') end
+    
+    response:setBody(response.body) 
 end
 
 function Handler:handle(url)
@@ -22,6 +24,7 @@ end
 function Handler:_handle(url)
     response.status = 200
     response.body = ''
+    response.type = 'text'
 
     -- parse request params
     local query = url.query or ""
@@ -31,6 +34,9 @@ function Handler:_handle(url)
     end
     
     request.params = urlparse.parse_query(query) or {}
+    
+    breeze.logger:debug("request params")
+    breeze.logger:debug(request.params)
     
     local match, slashes = url.path:gsub("/", "/")
     
@@ -64,9 +70,7 @@ function Handler:_handle(url)
             
             
             local methodHandler = self[route.action]
-            
 
-            
             if type(methodHandler) == 'function' then
                 methodHandler(self)
                 return
@@ -80,6 +84,7 @@ function Handler:_handle(url)
     if type(methodHandler) == 'function' then 
         methodHandler(self) 
     else
+        breeze.logger:warn("could not find handler for %s %s", request.method, request.url)
         response.status = 501
         response.body = 'Not implemented'
     end

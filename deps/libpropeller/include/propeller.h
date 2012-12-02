@@ -153,6 +153,9 @@ extern "C"
      * @param data custom data
      */
      typedef void ( PROPELLER_API *OnRequest ) ( const void* request, void* response, void* data, void* threadData );
+
+     typedef void ( PROPELLER_API *AfterRequest ) ( void* data, void* threadData );
+
      /*!
      * callback function called when new request process thread is started
      *
@@ -176,6 +179,9 @@ extern "C"
      * @return 0 on success, 1 on failure
      */
     PROPELLER_APIEXP short PROPELLER_API propeller_serverSetOnRequestCallback( void* server, OnRequest callback, void* data );
+
+    PROPELLER_APIEXP short PROPELLER_API propeller_serverSetAfterRequestCallback( void* server, AfterRequest callback, void* data );
+
     /*!
      * Set  thread started callback
      *

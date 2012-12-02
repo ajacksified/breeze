@@ -19,7 +19,6 @@ limitations under the License.
 #include "event.h"
 #include "common.h"
 
-
 namespace libevent
 {
     static bool s_initThreads = false;
@@ -60,6 +59,7 @@ namespace libevent
 
         if ( m_socket.bind( m_port ) == sys::Socket::StatusFailed )
         {
+            TRACE_ERROR( "cannot bind to socket, error %d", sys::General::getLastError() );
             throw BindError;
         }
         

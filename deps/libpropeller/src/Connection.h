@@ -49,7 +49,7 @@ public:
     {
         if ( !m_bodyLength )
         {
-            return m_empty;
+            return NULL;
         }
 
         return m_body;
@@ -60,7 +60,7 @@ public:
         return m_protocol;
     }
 
-    const std::string& header( const std::string& name ) const;
+    const char* header( const char* name ) const;
 
     typedef std::map< std::string, std::string > HeaderMap;
 
@@ -80,8 +80,9 @@ private:
     unsigned int m_length;
     char* m_body;
     unsigned int m_bodyLength;
-    static std::string s_empty;
-    char m_empty[2];
+    bool m_parsedHeader;
+    unsigned int m_read;
+    
     Connection& m_connection;
 };
 

@@ -25,11 +25,6 @@ limitations under the License.
 #define TRACE_LEVEL_WARNING			2	
 #define TRACE_LEVEL_ERROR			1	
 
-//#ifdef __PRETTY_FUNCTION__
-//#else
-//#define __PRETTY_FUNCTION__ __FUNCTION__
-//#endif
-
 void
 traceText ( const char* scope, unsigned long level, const char *format, ... );
 
@@ -61,14 +56,14 @@ private:
 };
 
 
-#ifdef _DEBUG
+#ifdef _PROPELLER_DEBUG
 #define TRACE_ENTERLEAVE()  TraceEnterLeave trace( __PRETTY_FUNCTION__ )
 #define TRACE( format, ... ) traceText( __FUNCTION__, TRACE_LEVEL_INFO, format, __VA_ARGS__ )
 #define TRACE_WARNING( format, ... ) traceText( __FUNCTION__, TRACE_LEVEL_WARNING, format, __VA_ARGS__ )
 #define TRACE_ERROR( format, ... ) traceText( __FUNCTION__, TRACE_LEVEL_ERROR, format, __VA_ARGS__ )
 
 #else
-#define TRACE_ENTERLEAVE() TraceEnterLeave trace( __FUNCTION__ )
+#define TRACE_ENTERLEAVE() 
 #define TRACE( format, ... )
 #define TRACE_WARNING( format, ... )
 #define TRACE_ERROR( format, ... ) traceText( __FUNCTION__, TRACE_LEVEL_ERROR, format, __VA_ARGS__ )

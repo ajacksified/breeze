@@ -20,7 +20,7 @@ limitations under the License.
 
 
 Server::Server( unsigned int port )
-: libevent::Listener( port ), m_connectionThreadCount( 4 ), m_connectionReadTimeout( 0 ), m_connectionWriteTimeout( 0 ),  m_pool( *this ), m_poolThreadCount( 10 )
+: libevent::Listener( port ), m_connectionThreadCount( 10 ), m_connectionReadTimeout( 0 ), m_connectionWriteTimeout( 0 ),  m_pool( *this ), m_poolThreadCount( 20 )
 {
     TRACE_ENTERLEAVE( );
 
@@ -317,6 +317,8 @@ Server::ProcessPool::Context::~Context( )
     
     response->complete();
     delete response;
+
+
 }
 
 
@@ -332,6 +334,16 @@ void Server::ProcessPool::handle( Context* context, const Thread& thread )
     ( ( Server::OnRequest ) callback.callback )( context->request, context->response, callback.data, thread.data() );
 
     delete context;
+
+    const Server::Callback& afterCallback = m_server.afterRequestCallback();
+
+    if ( afterCallback.callback )
+    {
+        ( ( Server::AfterRequest ) afterCallback.callback )( callback.data, thread.data() );
+    }
+
+
+
 }
 
 Server::ProcessPool::Thread::Thread( ProcessPool& pool )

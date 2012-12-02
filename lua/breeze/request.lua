@@ -21,5 +21,6 @@ end
 
 
 function Request:header(name)
+    assert(type(self) == 'table')
     return breezeApi.requestGetHeader(self._request, name)
 end

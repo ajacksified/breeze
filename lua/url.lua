@@ -125,9 +125,26 @@ function M.parse_query(query)
     local res = {}
     
     if query == nil or string.len(query) == 0 then return end
+    
+    query = string.gsub(query, "&amp;", "&")
+	query = string.gsub(query, "&lt;", "<")
+	query = string.gsub(query, "&gt;", ">")
 
     for k, v in string.gmatch(query, "(%w+)=(%w+)") do
-      res[k] = unescape(v)
+        
+        if not res[k] then 
+            res[k] = unescape(v)
+        else
+            -- handle case for multiple values
+            if type(res[k]) == 'string' then
+                local prev = res[k]
+                res[k] = {}
+                table.insert(res[k], prev)
+            end
+
+            table.insert(res[k], v)
+        end
+      
     end
     
     return res
