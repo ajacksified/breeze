@@ -5,6 +5,11 @@ function Request:initialize(request)
     self.url = self:_getUrl()
     self.body = self:_getBody()
     self.method = self:_getMethod()
+    
+    local contentType = self:header('content-type')
+    self.type = ''
+    if contentType then self.type = contentType:sub(contentType:find("/") + 1, -1) end
+    
 end
 
 function Request:_getUrl()

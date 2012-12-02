@@ -16,6 +16,8 @@ limitations under the License.
 
 #include "Breeze.h"
 #include <propeller.h>
+#include <lua_cjson.h>
+
 
 Breeze* Breeze::m_instance = NULL;
 
@@ -279,6 +281,11 @@ void Breeze::loadLibraries( lua_State* lua )
     };
 
     luaL_register( lua, "breezeApi", functions );
+
+    //
+    //  cjson library
+    //
+    luaopen_cjson( lua );
 
      //
      // modify package search path

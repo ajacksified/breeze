@@ -9,8 +9,14 @@ end
 
 function Handler:after()
     response:setStatus(response.status)
-    
-    if response.type == 'text' then response:setHeader('Content-Type', 'text/plain') end
+
+    if type(response.body) == 'table' then
+        -- encode table to json
+        response.body = json.encode(response.body)
+        response:setHeader('Content-Type', 'application/json')
+    elseif response.type == 'text' then 
+        response:setHeader('Content-Type', 'text/plain') 
+    end
     
     response:setBody(response.body) 
 end
@@ -25,18 +31,24 @@ function Handler:_handle(url)
     response.status = 200
     response.body = ''
     response.type = 'text'
-
+    
     -- parse request params
     local query = url.query or ""
     
-    if request:header('content-type') == 'application/x-www-form-urlencoded' then
+    breeze.logger:debug(request.type)
+    
+    if request.type == 'x-www-form-urlencoded' then
         query = query .. "&" .. request.body
     end
     
     request.params = urlparse.parse_query(query) or {}
     
+        
     breeze.logger:debug("request params")
     breeze.logger:debug(request.params)
+    
+    -- decode request
+    if request.type == 'json' then request.body = json.decode(request.body) end
     
     local match, slashes = url.path:gsub("/", "/")
     

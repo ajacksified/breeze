@@ -52,7 +52,7 @@ void traceText ( const char* scope, unsigned long level, const char *format, ...
 
         if ( level <= TRACE_LEVEL_ERROR )
         {
-            strcat( temp, "*Error*: " );
+            //strcat( temp, "*Error*: " );
         }
         else
         {
