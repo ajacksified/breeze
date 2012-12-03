@@ -31,7 +31,7 @@ edit and save file helloworld.lua:
     HelloWorldHandler = class('HelloWorldHandler', Handler)
 
     function HelloWorldHandler:get()
-        response.body = {a='b'}
+        response.body = {hello='world'}
     end 
 
 
@@ -47,7 +47,7 @@ Now there is a webserver running that responds with text 'Hello world' on url ht
     
 response is
 
-    {"a":"b"}
+    {"hello":"world"}
     
     
     
