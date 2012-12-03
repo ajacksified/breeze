@@ -42,7 +42,7 @@ endif
 ### Variables: ###
 
 CPPDEPS = -MT$@ -MF`echo $@ | sed -e 's,\.o$$,.d,'` -MD -MP
-PROPELLER_CXXFLAGS = -Iinclude -Ideps/libevent -O2 -D_THREAD_SAFE -pthread -fPIC \
+PROPELLER_CXXFLAGS = -Iinclude -Ideps/libevent -Ideps/libevent/include -O2 -D_THREAD_SAFE -pthread -fPIC \
 	-DPIC $(CPPFLAGS) $(CXXFLAGS)
 PROPELLER_OBJECTS =  \
 	obj/propeller_propeller.o \
