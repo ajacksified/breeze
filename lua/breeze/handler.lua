@@ -1,7 +1,8 @@
 Handler = class('Handler')
 local urlparse = require 'url'
 
-function Handler:initialize()
+function Handler:initialize(path)
+    self.path = path
 end
 
 function Handler:before()
@@ -11,7 +12,7 @@ function Handler:after()
 end
 
 function Handler:onRequest(url)
-	
+    
     -- parse request params
     local query = url.query or ""
     

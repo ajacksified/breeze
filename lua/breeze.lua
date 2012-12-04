@@ -42,7 +42,6 @@ local function findHandler(url)
     return handler, match
 end
 
-
 function breeze.addRoute(definition)
         
     local method, pattern = "", ""
@@ -100,10 +99,8 @@ local function onRequest(req, res)
     
     if not instanceOf(Handler, handler) then
         --create handler instance
-        handler = handler:new()
-        handler.path = path
+        handler = handler:new(path)
         breeze.handlers[path] = handler
-        
     end
     
     handler:onRequest(urlinfo)
