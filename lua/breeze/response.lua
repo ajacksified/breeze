@@ -2,6 +2,7 @@ Response = class('Response')
 
 function Response:initialize(response)
     self._response = response
+	self.body = ''
 end
 
 function Response:setStatus(status)

@@ -106,7 +106,7 @@ local function onRequest(req, res)
         
     end
     
-    handler:handle(urlinfo)
+    handler:onRequest(urlinfo)
     
     breeze.logger:info("response: %d", response.status)
     

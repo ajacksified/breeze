@@ -8,47 +8,57 @@ function Handler:before()
 end
 
 function Handler:after()
-    response:setStatus(response.status)
-
-    if type(response.body) == 'table' then
-        -- encode table to json
-        response.body = json.encode(response.body)
-        response:setHeader('Content-Type', 'application/json')
-    elseif response.type == 'text' then 
-        response:setHeader('Content-Type', 'text/plain') 
-    end
-    
-    response:setBody(response.body) 
 end
 
-function Handler:handle(url)
-    self:before()
-    self:_handle(url)
-    self:after()
-end
-
-function Handler:_handle(url)
-    response.status = 200
-    response.body = ''
-    response.type = 'text'
-    
+function Handler:onRequest(url)
+	
     -- parse request params
     local query = url.query or ""
-    
-    breeze.logger:debug(request.type)
     
     if request.type == 'x-www-form-urlencoded' then
         query = query .. "&" .. request.body
     end
     
     request.params = urlparse.parse_query(query) or {}
-    
-        
-    breeze.logger:debug("request params")
-    breeze.logger:debug(request.params)
+
+    if next(request.params) then
+        breeze.logger:debug("request params")
+        breeze.logger:debug(request.params)    
+    end  
     
     -- decode request
     if request.type == 'json' then request.body = json.decode(request.body) end
+
+    self:before()
+	
+	if response.status == nil then
+		self:_handle(url)
+		self:after()
+	else
+		-- before() has set status
+		breeze.logger:info("not handling the request as before has set status")
+	end
+	
+	self:_send()
+end
+
+function Handler:_send()
+	response:setStatus(response.status)
+
+	if type(response.body) == 'table' then
+	    -- encode table to json
+	    response.body = json.encode(response.body)
+	    response:setHeader('Content-Type', 'application/json')
+	elseif response.type == 'text' then 
+	    response:setHeader('Content-Type', 'text/plain') 
+	end
+    
+	response:setBody(response.body) 
+end
+
+function Handler:_handle(url)
+    response.status = 200
+    response.type = 'text'
     
     local match, slashes = url.path:gsub("/", "/")
     
@@ -62,6 +72,7 @@ function Handler:_handle(url)
             
             while true do
                 start, current, match = route.pattern:find(":(%w+)", start + 1)
+                
                 if start == nil then break end
                 
                 if endrel == 0 then
