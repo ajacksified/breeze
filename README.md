@@ -50,7 +50,7 @@ response is
     {"hello":"world"}
     
     
-    
+Please see [wiki](https://github.com/sergeyzavadski/breeze/wiki) for more information    
 
     
 
