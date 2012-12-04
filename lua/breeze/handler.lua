@@ -5,9 +5,11 @@ function Handler:initialize(path)
     self.path = path
 end
 
+--- Override to add any logic to be executed before all requests are handled
 function Handler:before()
 end
 
+--- Override to add any logic to be executed after all requests are handled
 function Handler:after()
 end
 

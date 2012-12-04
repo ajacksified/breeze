@@ -3,6 +3,8 @@ require 'middleclass'
 require 'breeze.request'
 require 'breeze.response'
 require 'breeze.handler'
+require 'stdlib.std'
+
 local logging = require 'logging'
 
 local url = require 'url'
@@ -42,6 +44,9 @@ local function findHandler(url)
     return handler, match
 end
 
+--- Add route.
+-- @param route definition as a table {route="GET /hello/:id", handler=HandlerClass action="id"}
+-- route is specified as HTTP method combined with relative url. parts of url prefixed with ":" will get passed to action method of handler instance as request paramaters
 function breeze.addRoute(definition)
         
     local method, pattern = "", ""
@@ -71,6 +76,9 @@ function breeze.addRoute(definition)
     definition.handler.addRoute{method = method, pattern = pattern, action = definition.action}
 end
 
+--- Add Handler
+-- @param handler definition as a table {path="/hello", handler=HandlerClass}
+-- any request to the url containing path specified in handler definition will be passed to instance of handler class. If exists method corresponding to HTTP method is called
 function breeze.addHandler(definition)
     breeze.handlers[definition.path] = definition.handler
 end
