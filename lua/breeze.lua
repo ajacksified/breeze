@@ -3,7 +3,7 @@ require 'middleclass'
 require 'breeze.request'
 require 'breeze.response'
 require 'breeze.handler'
-require 'stdlib.std'
+require 'std'
 
 local logging = require 'logging'
 

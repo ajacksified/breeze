@@ -81,6 +81,10 @@ install_breeze: obj/breeze
 	mkdir -p $(DESTDIR)$(prefix)/lib/breeze
 	cp -r lua/*  $(DESTDIR)$(prefix)/lib/breeze/	
 	chmod -R a+r $(DESTDIR)$(prefix)/lib/breeze/
+	cd deps/lua && make install
+	cp -r deps/lua/lua/*  $(DESTDIR)$(prefix)/lib/lua/5.2/
+	chmod -R a+r $(DESTDIR)$(prefix)/lib/lua/5.2/
+	
 
 uninstall_breeze: 
 	rm -f $(DESTDIR)$(prefix)/bin/breeze
