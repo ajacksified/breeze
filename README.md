@@ -17,7 +17,7 @@ Features:
 
 **Installing**
 
-    git clone git@github.com:sergeyzavadski/breeze.git
+    git clone git://github.com/sergeyzavadski/breeze.git
     cd breeze
     ./configure
     sudo make install
@@ -50,7 +50,7 @@ response is
     {"hello":"world"}
     
     
-    
+Please see [wiki](https://github.com/sergeyzavadski/breeze/wiki) for more information    
 
     
 
