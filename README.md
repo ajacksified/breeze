@@ -17,7 +17,7 @@ Features:
 
 **Installing**
 
-    git clone git@github.com:sergeyzavadski/breeze.git
+    git clone git://github.com/sergeyzavadski/breeze.git
     cd breeze
     ./configure
     sudo make install
