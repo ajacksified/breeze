@@ -34,6 +34,9 @@ ifeq ($(UNAME), Linux)
 PLATFORM_LDFLAGS = -lrt
 endif
 
+AR = ar rcu
+RANLIB= ranlib
+
 
 # -------------------------------------------------------------------------
 # Do not modify the rest of this file!
@@ -42,8 +45,7 @@ endif
 ### Variables: ###
 
 CPPDEPS = -MT$@ -MF`echo $@ | sed -e 's,\.o$$,.d,'` -MD -MP
-PROPELLER_CXXFLAGS = -Iinclude -Ideps/libevent -Ideps/libevent/include -O2 -D_THREAD_SAFE -pthread -fPIC \
-	-DPIC $(CPPFLAGS) $(CXXFLAGS)
+PROPELLER_CXXFLAGS = -Iinclude -Ideps/libevent -Ideps/libevent/include -O2 -D_THREAD_SAFE -pthread $(CPPFLAGS) $(CXXFLAGS)
 PROPELLER_OBJECTS =  \
 	obj/propeller_propeller.o \
 	obj/propeller_HttpProtocol.o \
@@ -65,7 +67,7 @@ obj:
 
 ### Targets: ###
 
-all: obj/libpropeller.so
+all: obj/libpropeller.a
 
 install: install_propeller install_propeller_headers
 
@@ -83,8 +85,11 @@ clean:
 libevent: 
 	cd deps/libevent && make
 
-obj/libpropeller.so: libevent $(PROPELLER_OBJECTS) 
-	$(CXX) $(LINK_DLL_FLAGS) -fPIC -o $@ $(PROPELLER_OBJECTS)  -pthread -Ldeps/libevent/.libs $(LDFLAGS)  -levent -levent_pthreads $(PLATFORM_LDFLAGS)
+obj/libpropeller.a: libevent $(PROPELLER_OBJECTS) 
+	#$(CXX) $(LINK_DLL_FLAGS) -o $@ $(PROPELLER_OBJECTS)  -pthread -Ldeps/libevent/.libs $(LDFLAGS)  -levent -levent_pthreads $(PLATFORM_LDFLAGS)
+	$(AR) $@ $(PROPELLER_OBJECTS)
+	$(RANLIB) $@
+	
 
 install_propeller: obj/libpropeller.so
 	$(INSTALL) -d $(DESTDIR)$(prefix)/lib

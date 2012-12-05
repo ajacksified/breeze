@@ -41,8 +41,6 @@ BREEZE_OBJECTS =  \
 
 ### Conditionally set variables: ###
 
-
-
 all: obj
 obj:
 	@mkdir -p obj
@@ -63,19 +61,18 @@ clean:
 	-(cd deps/lua && $(MAKE) clean)
 	-(cd deps/cjson && $(MAKE) clean)
 
-
 libs: 
 	cd deps/libpropeller && make && cd ../lua && make && cd ../cjson && make
 
 obj/breeze: libs $(BREEZE_OBJECTS) 
-	$(CXX) -o $@ $(BREEZE_OBJECTS) -Ldeps/libpropeller/obj -Ldeps/lua/src -Ldeps/cjson $(LDFLAGS)  -lpropeller -llua -lcjson
+	$(CXX) -o $@ $(BREEZE_OBJECTS) -Ldeps/libpropeller/obj -Ldeps/libpropeller/deps/libevent/.libs -Ldeps/lua/src -Ldeps/cjson $(LDFLAGS)  -lpropeller -llua -lcjson -pthread -levent -levent_pthreads
 
 install_breeze: obj/breeze
 	$(INSTALL) -d $(DESTDIR)$(prefix)/bin
 	install -c obj/breeze $(DESTDIR)$(prefix)/bin
 	mkdir -p $(DESTDIR)$(prefix)/lib/breeze
 	cp -r lua/*  $(DESTDIR)$(prefix)/lib/breeze/	
-	cd deps/libpropeller && make install
+	chmod -R a+r $(DESTDIR)$(prefix)/lib/breeze/
 
 uninstall_breeze: 
 	rm -f $(DESTDIR)$(prefix)/bin/breeze

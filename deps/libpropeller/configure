@@ -1,3 +1,3 @@
 #! /bin/bash
 
-cd deps/libevent && ./configure --disable-libevent-regress  --disable-malloc-replacement --disable-openssl --disable-debug-mode --disable-dependency-tracking
+cd deps/libevent && ./configure --enable-shared=no --disable-libevent-regress  --disable-malloc-replacement --disable-openssl --disable-debug-mode --disable-dependency-tracking
