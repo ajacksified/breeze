@@ -80,7 +80,7 @@ install_breeze: obj/breeze
 uninstall_breeze: 
 	rm -f $(DESTDIR)$(prefix)/bin/breeze
 
-obj/breeze_breeze.o: src/breeze.cpp
+obj/breeze_breeze.o: src/Breeze.cpp
 	$(CXX) -c -o $@ $(BREEZE_CXXFLAGS) $(CPPDEPS) $<
 
 obj/breeze_main.o: src/main.cpp
