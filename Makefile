@@ -73,9 +73,9 @@ obj/breeze: libs $(BREEZE_OBJECTS)
 install_breeze: obj/breeze
 	$(INSTALL) -d $(DESTDIR)$(prefix)/bin
 	install -c obj/breeze $(DESTDIR)$(prefix)/bin
-	install -c deps/libpropeller/obj/libpropeller.so $(DESTDIR)$(prefix)/lib
 	mkdir -p $(DESTDIR)$(prefix)/lib/breeze
 	cp -r lua/*  $(DESTDIR)$(prefix)/lib/breeze/	
+	cd deps/libpropeller && make install
 
 uninstall_breeze: 
 	rm -f $(DESTDIR)$(prefix)/bin/breeze

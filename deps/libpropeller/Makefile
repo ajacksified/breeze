@@ -90,6 +90,7 @@ install_propeller: obj/libpropeller.so
 	$(INSTALL) -d $(DESTDIR)$(prefix)/lib
 	$(INSTALL) -m 644 obj/libpropeller.so $(DESTDIR)$(prefix)/lib
 	install -c obj/libpropeller.so $(DESTDIR)$(prefix)/lib
+	cd deps/libevent && make install
 
 uninstall_propeller: 
 	rm -f $(DESTDIR)$(prefix)/lib/libpropeller.so
