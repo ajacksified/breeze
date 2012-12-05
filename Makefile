@@ -25,6 +25,8 @@ LDFLAGS ?=
 
 PLATFORM_LDFLAGS ?= 
 
+UNAME := $(shell uname)
+
 ifeq ($(UNAME), Linux)
 PLATFORM_LDFLAGS = -lrt
 endif
