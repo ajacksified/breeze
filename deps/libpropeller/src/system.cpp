@@ -241,6 +241,7 @@ namespace sys
 #ifdef __MACH__
         sem_wait( m_handle );
 #else
+        sem_wait( &m_handle );
 #endif
         
     }
