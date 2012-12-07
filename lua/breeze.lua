@@ -1,8 +1,12 @@
+--- OOP support
 require 'middleclass'
 
+-- breeze class definitions
 require 'breeze.request'
 require 'breeze.response'
 require 'breeze.handler'
+
+--- lua std lib
 require 'std'
 
 local logging = require 'logging'
@@ -21,27 +25,12 @@ breeze.logger = logging.new(function(self, level, message)
                             )
 
 local function findHandler(url)
+        -- get url base path
+    local path = url:split('/')[2]
     -- look for exact match
-    local handler = breeze.handlers[url]
-    local match = url
+    local handler = breeze.handlers[path]
     
-    if not handler then 
-        local maxlen = 0
-        --look for  possible match
-        for key, value in pairs(breeze.handlers) do
-            local result, subs = url:gsub(key, key)
-            if subs > 0 and #key >= maxlen then
-
-                 handler = value
-                 match = key
-                 
-                 -- store length of matched url. if there is url with greater length it takes priority
-                 maxlen = #handler 
-            end
-        end
-    end
-    
-    return handler, match
+    return handler, path
 end
 
 --- Add route.
@@ -50,10 +39,10 @@ end
 function breeze.addRoute(definition)
         
     local method, pattern = "", ""
-
+        
     -- break down route string
-    for w in definition.route:gmatch("[^%s]+") do
-        if #method == 0 then method = w else pattern = w end
+    for i, w  in ipairs(definition.route:split(' ')) do
+        if i == 1 then  method = w else pattern = w end
     end
     
     -- remove trailing slash
@@ -61,16 +50,12 @@ function breeze.addRoute(definition)
         pattern = pattern:sub(1, -2)
     end
 
-    local path = pattern
-
-    if pattern:find("/:") > 1 then
     -- get base path
-        path = pattern:sub(1, pattern:find("/:") - 1)
-    end
-
+    local path = pattern:split('/')[2]
+    
     -- check if there is a handler for this path
     if not breeze.handlers[path] then
-        breeze.handlers[path] = handler
+        breeze.handlers[path] = definition.handler
     end
 
     definition.handler.addRoute{method = method, pattern = pattern, action = definition.action}
@@ -114,8 +99,6 @@ local function onRequest(req, res)
     handler:onRequest(urlinfo)
     
     breeze.logger:info("response: %d", response.status)
-    
 end
 
 breezeApi.setOnRequest(onRequest)
-
