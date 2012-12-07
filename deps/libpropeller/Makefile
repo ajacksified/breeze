@@ -12,6 +12,7 @@ prefix ?= /usr/local
 DESTDIR ?= 
 
 # Compiler flags to link shared library 
+#Location
 LINK_DLL_FLAGS ?= -shared
 
 # C++ compiler 
@@ -86,11 +87,9 @@ libevent:
 	cd deps/libevent && make
 
 obj/libpropeller.a: libevent $(PROPELLER_OBJECTS) 
-	#$(CXX) $(LINK_DLL_FLAGS) -o $@ $(PROPELLER_OBJECTS)  -pthread -Ldeps/libevent/.libs $(LDFLAGS)  -levent -levent_pthreads $(PLATFORM_LDFLAGS)
 	$(AR) $@ $(PROPELLER_OBJECTS)
 	$(RANLIB) $@
 	
-
 install_propeller: obj/libpropeller.so
 	$(INSTALL) -d $(DESTDIR)$(prefix)/lib
 	$(INSTALL) -m 644 obj/libpropeller.so $(DESTDIR)$(prefix)/lib
