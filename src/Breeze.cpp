@@ -124,7 +124,6 @@ Breeze::Breeze( unsigned int port, const std::string& script )
 
 Breeze::~Breeze( )
 {
-    propeller_serverDestroy( m_server );
     m_instance = NULL;
 }
 
@@ -300,8 +299,6 @@ void Breeze::loadLibraries( lua_State* lua )
      lua_pushstring( lua, path.c_str() );
      lua_setfield( lua, -2, "path" );
      lua_pop( lua, 1 );
-
-    
   }
 
 
