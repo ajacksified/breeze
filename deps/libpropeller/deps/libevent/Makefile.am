@@ -5,8 +5,8 @@
 # See LICENSE for copying information.
 
 # 'foreign' means that we're not enforcing GNU package rules strictly.
-# '1.7' means that we need automake 1.7 or later (and we do).
-AUTOMAKE_OPTIONS = foreign 1.7
+# '1.9' means that we need automake 1.9 or later (and we do).
+AUTOMAKE_OPTIONS = foreign 1.9 subdir-objects
 
 ACLOCAL_AMFLAGS = -I m4
 
@@ -18,7 +18,7 @@ ACLOCAL_AMFLAGS = -I m4
 # will increment for each series until we revise our interfaces enough
 # that we can seriously expect ABI compatibility between series.
 #
-RELEASE = -release 2.0
+RELEASE = -release 2.1
 
 # This is the version info for the libevent binary API.  It has three
 # numbers:
@@ -38,7 +38,7 @@ RELEASE = -release 2.0
 #
 # Once an RC is out, DO NOT MAKE ANY ABI-BREAKING CHANGES IN THAT SERIES
 # UNLESS YOU REALLY REALLY HAVE TO.
-VERSION_INFO = 6:9:1
+VERSION_INFO = 1:0:0
 
 # History:          RELEASE    VERSION_INFO
 #  2.0.1-alpha --     2.0        1:0:0
@@ -65,6 +65,7 @@ VERSION_INFO = 6:9:1
 #
 # For Libevent 2.1:
 #  2.1.1-alpha --     2.1        1:0:0
+#  2.1.2-alpha--      2.2        2:0:1 (Backward-compatible)
 
 
 # ABI version history for this package effectively restarts every time
@@ -92,21 +93,24 @@ endif
 pkgconfigdir=$(libdir)/pkgconfig
 LIBEVENT_PKGCONFIG=libevent.pc
 
-# These sources are conditionally added by configure.in or conditionally
+# These sources are conditionally added by configure.ac or conditionally
 # included from other files.
 PLATFORM_DEPENDENT_SRC = \
-	epoll_sub.c \
-	arc4random.c
+	arc4random.c \
+	epoll_sub.c
 
 EXTRA_DIST = \
+	ChangeLog-1.4 \
+	ChangeLog-2.0 \
+	Doxyfile \
 	LICENSE \
+	Makefile.nmake test/Makefile.nmake \
 	autogen.sh \
 	event_rpcgen.py \
 	libevent.pc.in \
 	make-event-config.sed \
-	Doxyfile \
 	whatsnew-2.0.txt \
-	Makefile.nmake test/Makefile.nmake \
+	whatsnew-2.1.txt \
 	$(PLATFORM_DEPENDENT_SRC)
 
 LIBEVENT_LIBS_LA = libevent.la libevent_core.la libevent_extra.la
@@ -126,7 +130,15 @@ else
 noinst_LTLIBRARIES =  $(LIBEVENT_LIBS_LA)
 endif
 
-SUBDIRS = . include sample test
+EXTRA_SOURCE=
+noinst_HEADERS=
+noinst_PROGRAMS=
+EXTRA_PROGRAMS=
+CLEANFILES=
+BUILT_SOURCES =
+include include/include.am
+include sample/include.am
+include test/include.am
 
 if BUILD_WIN32
 
@@ -165,18 +177,36 @@ if SIGNAL_SUPPORT
 SYS_SRC += signal.c
 endif
 
-BUILT_SOURCES = include/event2/event-config.h
+BUILT_SOURCES += include/event2/event-config.h
 
 include/event2/event-config.h: config.h make-event-config.sed
-	test -d include/event2 || $(MKDIR_P) include/event2
-	$(SED) -f $(srcdir)/make-event-config.sed < config.h > $@T
-	mv -f $@T $@
+	$(AM_V_GEN)test -d include/event2 || $(MKDIR_P) include/event2
+	$(AM_V_at)$(SED) -f $(srcdir)/make-event-config.sed < config.h > $@T
+	$(AM_V_at)mv -f $@T $@
 
-CORE_SRC = event.c evthread.c buffer.c \
-	bufferevent.c bufferevent_sock.c bufferevent_filter.c \
-	bufferevent_pair.c listener.c bufferevent_ratelim.c \
-	evmap.c	log.c evutil.c evutil_rand.c strlcpy.c $(SYS_SRC)
-EXTRA_SRC = event_tagging.c http.c evdns.c evrpc.c
+CORE_SRC =					\
+	buffer.c				\
+	bufferevent.c				\
+	bufferevent_filter.c			\
+	bufferevent_pair.c			\
+	bufferevent_ratelim.c			\
+	bufferevent_sock.c			\
+	event.c					\
+	evmap.c					\
+	evthread.c				\
+	evutil.c				\
+	evutil_rand.c				\
+	evutil_time.c				\
+	listener.c				\
+	log.c					\
+	strlcpy.c				\
+	$(SYS_SRC)
+
+EXTRAS_SRC =					\
+	evdns.c					\
+	event_tagging.c				\
+	evrpc.c					\
+	http.c
 
 if BUILD_WITH_NO_UNDEFINED
 NO_UNDEFINED = -no-undefined
@@ -188,7 +218,7 @@ endif
 
 GENERIC_LDFLAGS = -version-info $(VERSION_INFO) $(RELEASE) $(NO_UNDEFINED)
 
-libevent_la_SOURCES = $(CORE_SRC) $(EXTRA_SRC)
+libevent_la_SOURCES = $(CORE_SRC) $(EXTRAS_SRC)
 libevent_la_LIBADD = @LTLIBOBJS@ $(SYS_LIBS)
 libevent_la_LDFLAGS = $(GENERIC_LDFLAGS)
 
@@ -202,7 +232,7 @@ libevent_pthreads_la_LIBADD = $(MAYBE_CORE)
 libevent_pthreads_la_LDFLAGS = $(GENERIC_LDFLAGS)
 endif
 
-libevent_extra_la_SOURCES = $(EXTRA_SRC)
+libevent_extra_la_SOURCES = $(EXTRAS_SRC)
 libevent_extra_la_LIBADD = $(MAYBE_CORE) $(SYS_LIBS)
 libevent_extra_la_LDFLAGS = $(GENERIC_LDFLAGS)
 
@@ -210,20 +240,44 @@ if OPENSSL
 libevent_openssl_la_SOURCES = bufferevent_openssl.c
 libevent_openssl_la_LIBADD = $(MAYBE_CORE) $(OPENSSL_LIBS)
 libevent_openssl_la_LDFLAGS = $(GENERIC_LDFLAGS)
+libevent_openssl_la_CPPFLAGS = $(AM_CPPFLAGS) $(OPENSSL_INCS)
 endif
 
-noinst_HEADERS = util-internal.h mm-internal.h ipv6-internal.h \
-	evrpc-internal.h strlcpy-internal.h evbuffer-internal.h \
-	bufferevent-internal.h http-internal.h event-internal.h \
-	evthread-internal.h ht-internal.h defer-internal.h \
-	minheap-internal.h log-internal.h evsignal-internal.h evmap-internal.h \
-	changelist-internal.h iocp-internal.h \
-	ratelim-internal.h \
-	WIN32-Code/event2/event-config.h \
-	WIN32-Code/tree.h \
-	compat/sys/queue.h
+noinst_HEADERS +=				\
+	WIN32-Code/evconfig-private.h		\
+	WIN32-Code/event2/event-config.h	\
+	WIN32-Code/tree.h			\
+	bufferevent-internal.h			\
+	changelist-internal.h			\
+	compat/sys/queue.h			\
+	defer-internal.h			\
+	evbuffer-internal.h			\
+	evconfig-private.h			\
+	event-internal.h			\
+	evmap-internal.h			\
+	evrpc-internal.h			\
+	evsignal-internal.h			\
+	evthread-internal.h			\
+	ht-internal.h				\
+	http-internal.h				\
+	iocp-internal.h				\
+	ipv6-internal.h				\
+	kqueue-internal.h			\
+	log-internal.h				\
+	minheap-internal.h			\
+	mm-internal.h				\
+	ratelim-internal.h			\
+	ratelim-internal.h			\
+	strlcpy-internal.h			\
+	time-internal.h				\
+	util-internal.h
 
-EVENT1_HDRS = event.h evhttp.h evdns.h evrpc.h evutil.h
+EVENT1_HDRS = \
+	include/evdns.h \
+	include/event.h \
+	include/evhttp.h \
+	include/evrpc.h \
+	include/evutil.h
 
 if INSTALL_LIBEVENT
 include_HEADERS = $(EVENT1_HDRS)

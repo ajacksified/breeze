@@ -23,7 +23,7 @@ Install as root via
 
 # make install
 
-Before, reporting any problems, please run the regression tests.
+Before reporting any problems, please run the regression tests.
 
 To enable the low-level tracing build the library as:
 
@@ -71,16 +71,17 @@ use and development: http://archives.seul.org/libevent/users/
 The following people have helped with suggestions, ideas, code or
 fixing bugs:
 
+  Samy Al Bahra
+  Jacob Appelbaum
   Arno Bakker
-  Alejo
   Weston Andros Adamson
   William Ahern
   Ivan Andropov
   Sergey Avseyev
   Avi Bab
+  Joachim Bauch
   Gilad Benjamini
   Stas Bekman
-  Joachim Bauch
   Denis Bilenko
   Julien Blache
   Kevin Bowling
@@ -92,13 +93,15 @@ fixing bugs:
   Shuo Chen
   Ka-Hing Cheung
   Andrew Cox
+  Paul Croome
   George Danchev
   Andrew Danforth
-  Antony Dovgal
   Ed Day
   Christopher Davis
   Mike Davis
+  Antony Dovgal
   Mihai Draghicioiu
+  Alexander Drozdov
   Mark Ellzey
   Shie Erlich
   Leonid Evdokimov
@@ -106,14 +109,18 @@ fixing bugs:
   Christophe Fillot
   Mike Frysinger
   Remi Gacogne
+  Artem Germanov
   Alexander von Gernler
   Artur Grabowski
+  Diwaker Gupta
   Sebastian Hahn
   Dave Hart
   Greg Hazel
   Michael Herf
+  Sebastian Hahn
   Savg He
   Mark Heily
+  Michael Herf
   Greg Hewgill
   Andrew Hochhaus
   Aaron Hopkins
@@ -123,6 +130,8 @@ fixing bugs:
   Evan Jones
   George Kadianakis
   Phua Keat
+  Azat Khuzhin
+  Alexander Klauer
   Kevin Ko
   Brian Koehmstedt
   Marko Kreen
@@ -131,6 +140,7 @@ fixing bugs:
   Scott Lamb
   Christopher Layne
   Adam Langley
+  Graham Leggett
   Philip Lewis
   Zhou Li
   David Libenzi
@@ -141,13 +151,16 @@ fixing bugs:
   Hagne Mahre
   Lubomir Marinov
   Abilio Marques
+  Abel Mathew
   Nick Mathewson
   James Mansion
   Nicholas Marriott
   Andrey Matveev
   Caitlin Mercer
   Dagobert Michelsen
+  Andrea Montefusco
   Mansour Moufid
+  Mina Naguib
   Felix Nawothnig
   Trond Norbye
   Linus Nordberg
@@ -155,15 +168,18 @@ fixing bugs:
   Jon Oberheide
   Phil Oleson
   Dave Pacheco
+  Derrick Pallas
   Tassilo von Parseval
   Catalin Patulea
   Patrick Pelletier
   Simon Perreault
   Pierre Phaneuf
+  Amarin Phaosawasdi
   Ryan Phillips
   Dimitre Piskyulev
   Pavel Plesov
   Jon Poland
+  Roman Puls
   Nate R
   Robert Ransom
   Bert JW Regeer
@@ -175,6 +191,7 @@ fixing bugs:
   Ralf Schmitt
   Mike Smellie
   Kevin Springborn
+  Nir Soffer
   Harlan Stenn
   Steve Snyder
   Dug Song
@@ -189,10 +206,13 @@ fixing bugs:
   Colin Watt
   Zack Weinberg
   Jardel Weyrich
+  Jay R. Wren
+  Zack Weinberg
+  Alejo
   Alex
   Taral
   propanbutan
   mmadia
-
+  yangacer
 
 If we have forgotten your name, please contact us.

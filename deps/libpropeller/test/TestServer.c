@@ -4,6 +4,9 @@
 #include <signal.h>
 
 #include <execinfo.h>
+#include <sys/resource.h>
+#include <sys/types.h>
+#include <sys/time.h>
 
 void* server = NULL;
 
@@ -31,16 +34,12 @@ void onThreadStarted( void** threadData, void* data )
     *threadData = ( void* ) 5;
 }
 
-void onSigint( int signum )
-{
-    propeller_serverStop( server );
-    propeller_serverDestroy( server );
-}
-
 int main ( int argc, char** argv )
 {
-    signal( SIGINT, onSigint );
-      signal(SIGSEGV, handler); 
+
+     signal(SIGSEGV, handler); 
+      
+    
     
     //
     //  create server

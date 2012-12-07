@@ -24,7 +24,74 @@ limitations under the License.
 //	HTTP request
 //
 
-class Connection;
+class Connection : public libevent::Connection
+{
+    friend class Request;
+    friend class Response;
+
+public:
+
+    Connection( const Server::ConnectionThread& thread, Server::ProcessPool& pool, sys::Socket* socket );
+    virtual ~Connection( );
+    virtual void onRead( );
+    virtual void onClose( );
+    
+    
+    void setClose()
+    {
+        TRACE_ENTERLEAVE();
+        m_close = true;
+    }
+
+    Request* request( )
+    {
+        return m_request;
+    }
+
+    //
+    //  increase reference count
+    //
+    void ref()
+    {
+        TRACE_ENTERLEAVE();
+                
+        sys::General::interlockedIncrement( &m_ref );
+    }
+
+    //
+    //  decrease reference count
+    //
+    void deref()
+    {
+        TRACE_ENTERLEAVE();
+        
+        unsigned int count = sys::General::interlockedDecrement( &m_ref );
+                
+        if ( count == 1 ) 
+        {
+            //
+            //  schedule deletion
+            //  
+            scheduleDelete();
+        }
+        
+    }
+    
+    bool needClose() const
+    {
+        return m_needClose;
+    }
+
+
+private:
+    Request* m_request;
+    const Server::ConnectionThread& m_thread;
+    Server::ProcessPool& m_pool;
+    
+    unsigned int m_ref;
+    bool m_needClose;
+    
+};
 
 class Request
 {
@@ -68,6 +135,8 @@ public:
     {
         return m_headers;
     }
+    
+    
 
 
 private:
@@ -108,11 +177,13 @@ public:
 
     void addHeader( const char* name, const char* value );
     void setBody( const char* body = NULL );
+    
+    void complete();
+    
 
     ~Response( );
     
-    void complete();
-
+   
 private:
 
     Response( Connection& connection, unsigned int status = HttpProtocol::Ok );
@@ -126,61 +197,6 @@ private:
 
 };
 
-class Connection : public libevent::Connection
-{
-    friend class Request;
-    friend class Response;
 
-public:
-
-    Connection( Server::ConnectionThread& thread, Server& server, sys::Socket* socket );
-    virtual ~Connection( );
-    virtual void onRead( );
-    virtual void onClose( );
-
-    
-
-    Request* request( )
-    {
-        return m_request;
-    }
-
-    void ref()
-    {
-        sys::General::interlockedIncrement( &m_ref );
-    }
-
-    void setDelete()
-    {
-        m_delete = true;
-    }
-
-    void tryDelete()
-    {
-        TRACE("%d %d" , m_delete , m_ref);
-        
-        if ( m_delete && !m_ref )
-        {
-            delete this;
-        }
-    }
-
-    void deref()
-    {
-        sys::General::interlockedDecrement( &m_ref );
-        tryDelete();
-    }
-
-
-
-
-private:
-    Request* m_request;
-    Server::ConnectionThread& m_thread;
-    Server& m_server;
-    unsigned int m_ref;
-    bool m_delete;
-
-};
 #endif	/* _CONNECTION_H */
 

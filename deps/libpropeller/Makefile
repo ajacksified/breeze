@@ -27,14 +27,6 @@ CPPFLAGS ?=
 # Standard linker flags 
 LDFLAGS ?= 
 
-UNAME := $(shell uname)
-
-PLATFORM_LDFLAGS ?= 
-
-ifeq ($(UNAME), Linux)
-PLATFORM_LDFLAGS = -lrt
-endif
-
 AR = ar rcu
 RANLIB= ranlib
 
@@ -59,8 +51,6 @@ PROPELLER_HEADERS =  \
 	../include/propeller.h
 
 ### Conditionally set variables: ###
-
-
 
 all: obj
 obj:

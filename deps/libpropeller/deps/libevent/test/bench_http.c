@@ -27,7 +27,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock2.h>
 #else
 #include <sys/socket.h>
@@ -93,7 +93,7 @@ main(int argc, char **argv)
 	unsigned short port = 8080;
 	char *endptr = NULL;
 
-#ifdef WIN32
+#ifdef _WIN32
 	WSADATA WSAData;
 	WSAStartup(0x101, &WSAData);
 #else
@@ -135,7 +135,7 @@ main(int argc, char **argv)
 				exit(1);
 			}
 			break;
-#ifdef WIN32
+#ifdef _WIN32
 		case 'i':
 			use_iocp = 1;
 			evthread_use_windows_threads();
@@ -169,10 +169,8 @@ main(int argc, char **argv)
 	evhttp_set_cb(http, "/ind", http_basic_cb, NULL);
 	fprintf(stderr, "/ind - basic content (memory copy)\n");
 
-#ifdef _EVENT2_EVENT_H_
 	evhttp_set_cb(http, "/ref", http_ref_cb, NULL);
 	fprintf(stderr, "/ref - basic content (reference)\n");
-#endif
 
 	fprintf(stderr, "Serving %d bytes on port %d using %s\n",
 	    (int)content_len, port,

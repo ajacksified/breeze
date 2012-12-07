@@ -18,6 +18,10 @@ limitations under the License.
 
 #include "event.h"
 #include "common.h"
+#include "include/event2/event.h"
+#include "include/event2/bufferevent.h"
+#include "include/event2/bufferevent_struct.h"
+#include "bufferevent-internal.h"
 
 namespace libevent
 {
@@ -43,6 +47,8 @@ namespace libevent
      TRACE("init threads", "");
      evthread_use_pthreads();
 #endif
+     
+     //event_enable_debug_logging(EVENT_DBG_ALL);
     }
 
     Listener::Listener( unsigned int port )
@@ -91,44 +97,46 @@ namespace libevent
         (( Listener* ) arg)->onAccept();
     }
 
-    Connection::Connection( sys::Socket* socket )
-    : m_socket( socket ), m_handle( NULL ), m_close( false ), m_id( ( intptr_t ) this )
+    Connection::Connection( sys::Socket* socket, const Base& base )
+    : m_socket( socket ), m_handle( NULL ), m_close( false ), m_id( ( intptr_t ) this ), m_closed( false ), m_deleteEvent( NULL ), m_base( base )
     {
         TRACE_ENTERLEAVE();
         General::setSocketNonBlocking( *socket );
-     }
-
-
-    void Connection::assign( const Base& base )
-    {
-        m_handle = bufferevent_socket_new( base, m_socket->s(), BEV_OPT_THREADSAFE | BEV_OPT_CLOSE_ON_FREE );
+        
+        m_handle = bufferevent_socket_new( m_base, m_socket->s(), BEV_OPT_THREADSAFE );
 
         if ( !m_handle )
         {
             TRACE_ERROR( "failed to create buffered event", "" );
             throw GeneralError;
         }
-
+        
         bufferevent_setcb( m_handle, onReadStatic, onWriteStatic, onErrorStatic, this );
-        bufferevent_enable( m_handle, EV_READ | EV_WRITE );
+        bufferevent_enable( m_handle, EV_READ | EV_WRITE  );
+     
         m_input = bufferevent_get_input( m_handle );
-        //m_output = evbuffer_new();
         m_output = bufferevent_get_output( m_handle );
      }
 
     Connection::~Connection()
     {
         TRACE_ENTERLEAVE();
-        
-        if ( m_handle )
-        {
-            bufferevent_disable( m_handle, EV_READ | EV_WRITE );
-            bufferevent_free( m_handle );
-        }
 
+        flush();
+        
         if ( m_socket )
         {
             delete m_socket;
+        }
+        
+        if ( m_handle )
+        {
+            bufferevent_free( m_handle );
+        }
+
+        if ( m_deleteEvent )
+        {
+            evtimer_del( m_deleteEvent );
         }
     }
 
@@ -139,11 +147,14 @@ namespace libevent
     
     void Connection::write( const char* data, unsigned int length )
     {
-#ifdef _DEBUG
+        TRACE_ENTERLEAVE();
+        
+#ifdef _PROPELLER_DEBUG
         std::string s;
         s.append( data, length );
         TRACE( "%s", s.c_str() );
 #endif
+        
         bufferevent_write( m_handle, data, length );
     }
 
@@ -168,11 +179,19 @@ namespace libevent
 
     void Connection::close()
     {
-        m_socket->shutdown();
+        TRACE_ENTERLEAVE();
         
-        onClose();
-    }
+        if ( !m_closed )
+        {
+            bufferevent_disable( m_handle, EV_READ | EV_WRITE );
+            onClose();
+        }
+    }   
 
+    void Connection::onClose()
+    {
+    }
+    
     void Connection::onRead()
     {
         
@@ -182,7 +201,7 @@ namespace libevent
     {
         TRACE_ENTERLEAVE();
         
-        if ( m_close )
+        if ( m_close  )
         {
             close();
         }
@@ -192,11 +211,12 @@ namespace libevent
     {
         TRACE_ENTERLEAVE();
 
-        TRACE("%d, eof: %d, error %d", error, error & BEV_EVENT_EOF, error & BEV_EVENT_ERROR );
-
+        TRACE("0x%x %d, eof: %d, error %d", m_handle, error, error & BEV_EVENT_EOF, error & BEV_EVENT_ERROR );
+        
         if ( error & BEV_EVENT_EOF || error & BEV_EVENT_ERROR)
         {
             close();
+            return;
         }
 
         if ( error & BEV_EVENT_TIMEOUT )
@@ -204,7 +224,7 @@ namespace libevent
             close();
         }
     }
-
+    
 
     void Connection::onReadStatic( bufferevent* bev, void* ctx )
     {
@@ -218,6 +238,11 @@ namespace libevent
 
     void Connection::onErrorStatic( bufferevent* bev, short error, void* ctx )
     {
+        if ( !bufferevent_get_enabled( bev ) )
+        {
+            return;
+        }
+
         (( Connection* ) ctx)->onError( error );
     }
 
@@ -246,15 +271,12 @@ namespace libevent
         timeout.tv_sec = ( long ) value;
         timeout.tv_usec = 0;
 
-        TRACE("setting timeouts", "");
-        
         bufferevent_set_timeouts( m_handle, &timeout, NULL );
     }
 
     void Connection::flush()
     {
-        bufferevent_flush( m_handle, EV_WRITE, BEV_FLUSH );
-
+       bufferevent_flush( m_handle, EV_WRITE, BEV_FINISHED );
     }
 
     void Connection::setWriteTimeout( unsigned int value )
@@ -265,7 +287,60 @@ namespace libevent
 
         bufferevent_set_timeouts( m_handle, NULL, &timeout );
     }
-
+    
+    
+    void Connection::scheduleDelete()
+    {
+        //
+        //  schedule deletion event
+        //
+        m_deleteEvent = evtimer_new( m_base, onDeleteStatic, this );
+        struct timeval timeout = { 0, 0 };
+        evtimer_add( m_deleteEvent, &timeout );
+    }
+    
+    void Connection::onDeleteStatic( evutil_socket_t fd, short what, void *arg )
+    {
+        ( ( Connection* ) arg )->onDelete();
+    }
+    
+    void Connection::onDelete()
+    {
+        TRACE_ENTERLEAVE();
+     
+        //
+        //  suicide
+        //
+        delete this;
+    }
+    
+    Timer::Timer(  unsigned int seconds )
+    : m_seconds( seconds ), m_timer( NULL )
+    {
+    }
+    
+    void Timer::assign( const Base& base )
+    {
+        struct timeval timeout = { m_seconds, 0 };
+        
+        m_timer  = event_new( base, -1, EV_PERSIST, onTimerStatic, this );
+        
+        event_add( m_timer, &timeout );
+    }
+    
+    Timer::~Timer()
+    {
+        if ( m_timer )
+        {
+            event_free( m_timer );
+        }
+        
+    }
+    
+    void Timer::onTimerStatic( evutil_socket_t fd, short what, void *arg )
+    {
+        ( ( Timer* ) arg )->onTimer();
+    }
 
 
 

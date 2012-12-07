@@ -24,11 +24,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include "util-internal.h"
 
 /* The old tests here need assertions to work. */
 #undef NDEBUG
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock2.h>
 #include <windows.h>
 #endif
@@ -37,11 +38,11 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef _EVENT_HAVE_SYS_TIME_H
+#ifdef EVENT__HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
 #include <sys/queue.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -57,7 +58,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#ifdef _EVENT_HAVE_ARPA_INET_H
+#ifdef EVENT__HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
 
@@ -75,7 +76,7 @@
 
 #include "bufferevent-internal.h"
 #include "util-internal.h"
-#ifdef WIN32
+#ifdef _WIN32
 #include "iocp-internal.h"
 #endif
 
@@ -132,7 +133,7 @@ test_bufferevent_impl(int use_pair)
 		tt_assert(0 == bufferevent_pair_new(NULL, 0, pair));
 		bev1 = pair[0];
 		bev2 = pair[1];
-		bufferevent_setcb(bev1, readcb, writecb, errorcb, NULL);
+		bufferevent_setcb(bev1, readcb, writecb, errorcb, bev1);
 		bufferevent_setcb(bev2, readcb, writecb, errorcb, NULL);
 		tt_int_op(bufferevent_getfd(bev1), ==, -1);
 		tt_ptr_op(bufferevent_get_underlying(bev1), ==, NULL);
@@ -145,6 +146,18 @@ test_bufferevent_impl(int use_pair)
 		tt_ptr_op(bufferevent_get_underlying(bev1), ==, NULL);
 		tt_ptr_op(bufferevent_pair_get_partner(bev1), ==, NULL);
 		tt_ptr_op(bufferevent_pair_get_partner(bev2), ==, NULL);
+	}
+
+	{
+		/* Test getcb. */
+		bufferevent_data_cb r, w;
+		bufferevent_event_cb e;
+		void *a;
+		bufferevent_getcb(bev1, &r, &w, &e, &a);
+		tt_ptr_op(r, ==, readcb);
+		tt_ptr_op(w, ==, writecb);
+		tt_ptr_op(e, ==, errorcb);
+		tt_ptr_op(a, ==, use_pair ? bev1 : NULL);
 	}
 
 	bufferevent_disable(bev1, EV_READ);
@@ -493,11 +506,11 @@ test_bufferevent_connect(void *arg)
 		be_flags |= BEV_OPT_THREADSAFE;
 	}
 	bufferevent_connect_test_flags = be_flags;
-#ifdef WIN32
+#ifdef _WIN32
 	if (!strcmp((char*)data->setup_data, "unset_connectex")) {
 		struct win32_extension_fns *ext =
 		    (struct win32_extension_fns *)
-		    event_get_win32_extension_fns();
+		    event_get_win32_extension_fns_();
 		ext->ConnectEx = NULL;
 	}
 #endif
@@ -754,8 +767,8 @@ test_bufferevent_timeouts(void *arg)
 	bufferevent_set_timeouts(bev2, &tv_r, &tv_w);
 	bufferevent_enable(bev2, EV_WRITE);
 
-	tv_r.tv_sec = 1;
-	tv_r.tv_usec = 0;
+	tv_r.tv_sec = 0;
+	tv_r.tv_usec = 350000;
 
 	event_base_loopexit(data->base, &tv_r);
 	event_base_dispatch(data->base);
@@ -809,7 +822,7 @@ struct testcase_t bufferevent_testcases[] = {
 	  TT_FORK|TT_NEED_BASE, &basic_setup, (void*)"filter" },
 	{ "bufferevent_timeout_filter_pair", test_bufferevent_timeouts,
 	  TT_FORK|TT_NEED_BASE, &basic_setup, (void*)"filter pair" },
-#ifdef _EVENT_HAVE_LIBZ
+#ifdef EVENT__HAVE_LIBZ
 	LEGACY(bufferevent_zlib, TT_ISOLATED),
 #else
 	{ "bufferevent_zlib", NULL, TT_SKIP, NULL, NULL },

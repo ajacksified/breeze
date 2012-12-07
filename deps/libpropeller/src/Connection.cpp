@@ -16,24 +16,33 @@ limitations under the License.
 
 #include "Connection.h"
 
-Connection::Connection( Server::ConnectionThread& thread, Server& server, sys::Socket* socket )
- : libevent::Connection( socket ), m_request( NULL ), m_thread( thread ), m_server( server ), m_ref( 0 ), m_delete( false )
+Connection::Connection( const Server::ConnectionThread& thread, Server::ProcessPool& pool, sys::Socket* socket )
+ : libevent::Connection( socket, thread.base() ), m_request( NULL ), m_thread( thread ),  m_ref( 0 ), m_needClose( false ), m_pool( pool )
  {
+    TRACE_ENTERLEAVE();
+    
     //
-    //  assign connection thread event base
+    //  rescan event base for new events
     //
-    assign( m_thread.base() );
+    thread.base().rescan();
 
-    if ( m_server.connectionReadTimeout( ) > 0 )
+    //
+    //  set timeouts if needed
+    //
+    if ( thread.server().connectionReadTimeout( ) > 0 )
     {
-        setReadTimeout( m_server.connectionReadTimeout( ) );
+        setReadTimeout( thread.server().connectionReadTimeout( ) );
     }
 
-    if ( m_server.connectionWriteTimeout( ) > 0 )
+    if ( thread.server().connectionWriteTimeout( ) > 0 )
     {
-        setWriteTimeout( m_server.connectionWriteTimeout( ) );
+        setWriteTimeout( thread.server().connectionWriteTimeout( ) );
     }
     
+    //
+    //  increase reference count
+    //  
+    ref();
  }
 
 Connection::~Connection()
@@ -44,9 +53,11 @@ Connection::~Connection()
     {
         delete m_request;
     }
-    
 }
 
+//
+//  on read callback  
+//
 void Connection::onRead( )
 {
     TRACE_ENTERLEAVE( );
@@ -64,25 +75,22 @@ void Connection::onRead( )
         m_request->parse();
 
         //
-        //  set close connection flag if needed
-        //
-        const char* header = m_request->header( "connection" );
-        if ( header && strcmp( header, "close" ) == 0 ) ///|| strstr( m_request->protocol(), "1.0" ) )
-        {
-            m_close = true;
-        }
-
-        //
         //  dispatch request for processing
         //
-        ref();
-        m_server.process( m_request, new Response( *this, HttpProtocol::Ok ) );
+        ref( );
+        m_pool.process( m_request, new Response( *this, HttpProtocol::Ok ) );
+
+        const char* header = m_request->header( "connection" );
+
+        if ( header && strcmp( header, "close" ) == 0 ) ///|| strstr( m_request->protocol(), "1.0" ) )
+        {
+            m_needClose = true;
+        }
 
         m_request = NULL;
     }
     catch ( HttpProtocol::Status status )
     {
-
         TRACE("error: %d", status );
 
         if ( status != HttpProtocol::Ok )
@@ -90,8 +98,8 @@ void Connection::onRead( )
             delete m_request;
 
             m_request = NULL;
-
             {
+                
                 Response response( *this, status );
                 response.setBody();
             }
@@ -104,15 +112,19 @@ void Connection::onRead( )
 void Connection::onClose( )
 {
     TRACE_ENTERLEAVE();
-    {
-        m_thread.remove( this );
-    }
+
+    deref();
 }
 
 Request::~Request()
 {
     TRACE_ENTERLEAVE();
-
+    
+    //
+    //  set close connection flag if needed
+    //
+ 
+    
     if ( m_body )
     {
         delete[] m_body;
@@ -294,12 +306,13 @@ Response::Response( Connection& connection, unsigned int status )
 Response::~Response( )
 {
     TRACE_ENTERLEAVE();
+    
+    if ( m_connection.needClose() )
+    {
+        m_connection.setClose();
+    }
  }
 
-void Response::complete()
-{
-    m_connection.deref();
-}
 
 void Response::init( )
 {
@@ -335,6 +348,16 @@ void Response::addHeader( const char* name, const char* value )
     m_connection.write( ": ", 2 );
     m_connection.write( value, strlen( value ) );
     m_connection.write( "\r\n", 2 );
+}
+
+void Response::complete( )
+{
+    TRACE_ENTERLEAVE();
+    
+    //
+    //  decrease connection reference count
+    //
+    m_connection.deref();
 }
 
 void Response::setBody( const char* body  )

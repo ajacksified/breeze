@@ -40,7 +40,7 @@ endif
 ### Variables: ###
 
 CPPDEPS = -MT$@ -MF`echo $@ | sed -e 's,\.o$$,.d,'` -MD -MP
-BREEZE_CXXFLAGS = -Ideps/libpropeller/include -Ideps/lua/src -Ideps/cjson -O2 -D_THREAD_SAFE \
+BREEZE_CXXFLAGS = -Ideps/libpropeller/include -Ideps/lua/src -Ideps/cjson -O2 -D_THREAD_SAFE -pthread \
 	$(CPPFLAGS) $(CXXFLAGS)
 BREEZE_OBJECTS =  \
 	obj/breeze_breeze.o \
@@ -73,7 +73,7 @@ libs:
 	cd deps/libpropeller && make && cd ../lua && make && cd ../cjson && make
 
 obj/breeze: libs $(BREEZE_OBJECTS) 
-	$(CXX) -o $@ $(BREEZE_OBJECTS) -Ldeps/libpropeller/obj -Ldeps/libpropeller/deps/libevent/.libs -Ldeps/lua/src -Ldeps/cjson $(LDFLAGS) $(PLATFORM_LDFLAGS)  -lpropeller -llua -lcjson -pthread -levent -levent_pthreads
+	$(CXX) -o $@ $(BREEZE_OBJECTS)  -Ldeps/libpropeller/obj -Ldeps/libpropeller/deps/libevent/.libs -Ldeps/lua/src -Ldeps/cjson $(LDFLAGS) $(PLATFORM_LDFLAGS) -pthread -lpropeller -llua -lcjson  -levent -levent_pthreads
 
 install_breeze: obj/breeze
 	$(INSTALL) -d $(DESTDIR)$(prefix)/bin

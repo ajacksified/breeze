@@ -23,10 +23,10 @@ PROPELLER_APIEXP void* PROPELLER_API propeller_serverCreate( unsigned int port )
     return (void*) new Server( port );
 }
 
-PROPELLER_APIEXP void PROPELLER_API propeller_serverDestroy( void* server )
-{
-    delete ( ( Server* ) server );
-}
+//PROPELLER_APIEXP void PROPELLER_API propeller_serverDestroy( void* server )
+//{
+//    delete ( ( Server* ) server );
+//}
 
 PROPELLER_APIEXP short PROPELLER_API propeller_serverStart( void* server )
 {
@@ -43,12 +43,12 @@ PROPELLER_APIEXP short PROPELLER_API propeller_serverStart( void* server )
     return PROPELLER_STATUS_SUCCESS;
 }
 
-PROPELLER_APIEXP short PROPELLER_API propeller_serverStop( void* server )
-{
-     ( ( Server*  )server )->stop( );
-
-    return PROPELLER_STATUS_SUCCESS;
-}
+//PROPELLER_APIEXP short PROPELLER_API propeller_serverStop( void* server )
+//{
+//     ( ( Server*  )server )->stop( );
+//
+//    return PROPELLER_STATUS_SUCCESS;
+//}
 
 
 PROPELLER_APIEXP short PROPELLER_API propeller_serverSetConnectionThreadCount( void* server, unsigned int threads )
@@ -106,12 +106,12 @@ PROPELLER_APIEXP short PROPELLER_API propeller_serverSetOnRequestCallback( void*
     return PROPELLER_STATUS_SUCCESS;
 }
 
-PROPELLER_APIEXP short PROPELLER_API propeller_serverSetAfterRequestCallback( void* server, AfterRequest callback, void* data )
-{
-    ( ( Server* ) server )->setAfterRequestCallback( ( Server::AfterRequest ) callback, data );
-
-    return PROPELLER_STATUS_SUCCESS;
-}
+// PROPELLER_APIEXP short PROPELLER_API propeller_serverSetAfterRequestCallback( void* server, AfterRequest callback, void* data )
+// {
+//     ( ( Server* ) server )->setAfterRequestCallback( ( Server::AfterRequest ) callback, data );
+// 
+//     return PROPELLER_STATUS_SUCCESS;
+// }
 
 PROPELLER_APIEXP short PROPELLER_API propeller_serverSetOnThreadStartedCallback( void* server, OnThreadStarted callback, void* data )
 {

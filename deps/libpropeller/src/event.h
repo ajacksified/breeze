@@ -23,6 +23,8 @@ limitations under the License.
 #include <event2/event.h>
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
+#include <event2/thread.h>
+
 
 #include "system.h"
 #include "common.h"
@@ -59,25 +61,40 @@ namespace libevent
         : m_base( NULL ), m_started( false )
         {
             m_base = event_base_new();
+            
+//             event_config* cfg = event_config_new();
+//
+//            event_config_require_features(cfg, EV_FEATURE_O1);
+//
+//            m_base = event_base_new_with_config(cfg);
+//            
+//            event_config_free(cfg);
+            
+            evthread_make_base_notifiable( m_base );
         }
 
 
         void start( bool block = true )
         {
             m_started = true;
-            event_base_dispatch( m_base );
+            
+            event_base_loop( m_base, EVLOOP_NO_EXIT_ON_EMPTY );
+        }
+        
+        void rescan() const
+        {
+            event_base_loopcontinue( m_base );
         }
 
-        void stop()
+        void stop() const
         {
             TRACE_ENTERLEAVE();
             
-            if ( m_base && m_started )
+            if ( m_base )
             {
                 event_base_loopexit( m_base, NULL );
             }
 
-            m_started = false;
         }
 
         bool started() const
@@ -131,13 +148,27 @@ namespace libevent
         struct event* m_listenerEvent;
         unsigned int m_port;
     };
+    
+    class Timer
+    {
+    public:
+        Timer( unsigned int seconds );
+        void assign( const Base& base );
+        ~Timer();
+        static void onTimerStatic( evutil_socket_t fd, short what, void *arg );
+        virtual void onTimer() = 0;
+        
+    private: 
+        struct event* m_timer;
+        unsigned int m_seconds;
+    };
 
     class Connection
     {
     public:
 
 
-        Connection( sys::Socket* socket );
+        Connection( sys::Socket* socket, const Base& base );
         virtual ~Connection();
 
         void assign( const Base& base );
@@ -154,7 +185,7 @@ namespace libevent
         void send();
 
         void close();
-        virtual void onClose() = 0;
+        virtual void onClose();
         
         char* readLine();
         unsigned int inputLength();
@@ -162,7 +193,9 @@ namespace libevent
 
         void setReadTimeout( unsigned int value );
         void setWriteTimeout( unsigned int value );
-
+        
+        void scheduleDelete();
+        
         void flush();
 
         intptr_t id() const
@@ -180,13 +213,16 @@ namespace libevent
         static void onReadStatic( bufferevent* bev, void* ctx );
         static void onWriteStatic( bufferevent* bev, void* ctx );
         static void onErrorStatic( bufferevent* bev, short error, void* ctx );
-
-
+        static void onDeleteStatic( evutil_socket_t fd, short what, void *arg );
+        void onDelete();
+                
     private:
         bufferevent* m_handle;
         sys::Socket* m_socket;
         intptr_t m_id;
-
+        bool m_closed;
+        event* m_deleteEvent;
+        const Base& m_base;
     };
 
    

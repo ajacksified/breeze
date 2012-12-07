@@ -62,12 +62,13 @@ namespace sys
 #endif
     }
 
-    void General::interlockedDecrement( unsigned int* target )
+    unsigned int General::interlockedDecrement( unsigned int* target )
     {
 #ifdef WIN32
 
 #else
-    __sync_fetch_and_sub( target, 1 );
+    return __sync_fetch_and_sub( target, 1 );
+    
 #endif
     }
 
@@ -281,6 +282,11 @@ namespace sys
 
     }
 
+    intptr_t Thread::currentId()
+    {
+        return ( intptr_t ) pthread_self();
+        
+    }
     void Thread::stop ( )
     {
 
@@ -326,6 +332,7 @@ namespace sys
 
     void Thread::cleanup( )
     {
+        TRACE_ENTERLEAVE();
 
 #ifdef WIN32
         CloseHandle( m_handle );
@@ -461,6 +468,8 @@ namespace sys
     Socket::Status Socket::bind ( unsigned int port )
     {
         struct sockaddr_in service;
+        memset( &service, 0, sizeof(service) );
+        
         service.sin_family = AF_INET;
         service.sin_addr.s_addr = htonl( INADDR_ANY );
         service.sin_port = htons( port );

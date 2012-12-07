@@ -12,7 +12,7 @@
 
 #include <sys/types.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else
@@ -26,7 +26,7 @@
 #include <event2/dns_struct.h>
 #include <event2/util.h>
 
-#ifdef _EVENT_HAVE_NETINET_IN6_H
+#ifdef EVENT__HAVE_NETINET_IN6_H
 #include <netinet/in6.h>
 #endif
 
@@ -202,7 +202,7 @@ main(int c, char **v) {
 	}
 	if (idx < c) {
 		int res;
-#ifdef WIN32
+#ifdef _WIN32
 		if (resolv_conf == NULL)
 			res = evdns_base_config_windows_nameservers(evdns_base);
 		else

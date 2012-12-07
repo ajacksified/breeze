@@ -60,7 +60,7 @@ void traceText ( const char* scope, unsigned long level, const char *format, ...
         else
         {
             char time[32] = "0";
-            sprintf( time, "%u ", sys::General::getTime( ) );
+            sprintf( time, "%u: %d ", sys::General::getTime( ), sys::Thread::currentId() );
             strcat( temp, time );
         }
 

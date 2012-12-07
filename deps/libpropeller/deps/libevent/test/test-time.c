@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
 #include <sys/time.h>
 #endif
@@ -51,7 +51,7 @@ struct event *ev[NEVENT];
 static int
 rand_int(int n)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	return (int)(rand() % n);
 #else
 	return (int)(random() % n);
@@ -84,7 +84,7 @@ main(int argc, char **argv)
 {
 	struct timeval tv;
 	int i;
-#ifdef WIN32
+#ifdef _WIN32
 	WORD wVersionRequested;
 	WSADATA wsaData;
 

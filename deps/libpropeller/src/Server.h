@@ -103,8 +103,6 @@ public:
         m_afterRequestCallback.data = data;
     }
 
-
-
     const Callback& onThreadStartedCallback() const
     {
         return m_onThreadStartedCallback;
@@ -124,37 +122,27 @@ public:
             return m_base;
      }
 
-
     class ConnectionThread : public sys::Thread
     {
     public:
         ConnectionThread( Server& server );
         virtual ~ConnectionThread();
         
-        void add( Connection* connection );
-        void remove( Connection* connection );
-        
-        const Server& server()
+        const Server& server() const
         {
             return m_server;
         }
 
-        libevent::Base& base()
+        const libevent::Base& base() const
         {
             return m_base;
         }
-
-
-
+        
     protected:
         virtual void routine();
-
+    
     private:
         libevent::Base m_base;
-        sys::Event m_event;
-        typedef std::map< intptr_t, Connection* > ConnectionsMap;
-        ConnectionsMap m_connections;
-        sys::Lock m_lock;
         Server& m_server;
     };
 
@@ -197,10 +185,6 @@ public:
     {
         return m_connectionWriteTimeout;
     }
-
-protected:
-    void addConnection( Connection* connection );
-    void removeConnection( Connection* connection );
     
     class ProcessPool
     {
@@ -248,7 +232,6 @@ protected:
 
         void wait()
         {
-            //m_event.wait();
             m_semaphore.wait();
         }
         
@@ -268,6 +251,9 @@ protected:
         Server& m_server;
         bool m_stop;
     };
+    
+protected:
+   
 
 private:
     libevent::Base m_base;
@@ -282,9 +268,9 @@ private:
     Callback m_onThreadStartedCallback;
     Callback m_onThreadStoppedCallback;
 
-
     unsigned int m_poolThreadCount;
     ProcessPool m_pool;
+    
 };
 
 #endif //_PROPELLER_SERVER_H_

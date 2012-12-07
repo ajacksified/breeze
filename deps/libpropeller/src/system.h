@@ -85,7 +85,7 @@ namespace sys
 
         static void* interlockedExchangePointer( void** target, void* value );
         static void interlockedIncrement( unsigned int* target );
-        static void interlockedDecrement( unsigned int* target );
+        static unsigned int interlockedDecrement( unsigned int* target );
         static void sleep( unsigned int seconds );
 
     };
@@ -207,6 +207,8 @@ namespace sys
         {
             return m_started;
         }
+        
+        static intptr_t currentId();
 
     private:
         void cleanup();

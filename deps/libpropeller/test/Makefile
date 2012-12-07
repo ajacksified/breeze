@@ -1,5 +1,5 @@
 all:
-	gcc TestServer.c -I../include -L../bin -lpropeller  -o TestServer
+	gcc TestServer.c -I../include -L../obj -lpropeller  -o TestServer
 
 clean:
 	rm -rf TestServer

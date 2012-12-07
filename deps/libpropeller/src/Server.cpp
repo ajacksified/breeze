@@ -62,7 +62,6 @@ void Server::stop( )
 
         m_connectionThreads.pop_front();
     }
-    
 }
 
 void Server::start( )
@@ -75,7 +74,7 @@ void Server::start( )
     listen( m_base );
 
     //
-    //  start process threads
+    //  start connection threads
     //
     for ( int count = 0; count < m_connectionThreadCount; count++ )
     {
@@ -86,8 +85,8 @@ void Server::start( )
     //  start process pool
     //
     m_pool.start( m_poolThreadCount );
-
-    //
+    
+     //
     //  start event base
     //
     m_base.start( );
@@ -107,9 +106,20 @@ void Server::onAccept( )
         return;
     }
 
+    //
+    //  get first connection thread
+    //
     ConnectionThread* thread = m_connectionThreads.front( );
     m_connectionThreads.pop_front( );
-    thread->add( new Connection( *thread,  *this, socket ) );
+    
+    //
+    //  create new connection  and assign it to connection thread. it mantains referencre count and will delete itself when no longer referenced
+    //
+    new Connection( *thread, m_pool, socket );
+    
+    //
+    //  add connection thread to back
+    //
     m_connectionThreads.push_back( thread );
 }
 
@@ -123,61 +133,26 @@ void Server::process( Request* request, Response* response )
 Server::ConnectionThread::ConnectionThread( Server& server )
 : m_server( server )
 {
-
-}
-
-void Server::ConnectionThread::add( Connection* connection )
-{
-    TRACE_ENTERLEAVE( );
+    TRACE_ENTERLEAVE();
     
-    
-    
-    if ( !started( ) )
-    {
-        start( );
-    }
-
-    sys::LockEnterLeave lock( m_lock );
-
-    m_connections[ connection->id( ) ] = connection;
-    
-}
-
-void Server::ConnectionThread::remove( Connection* connection )
-{
-    TRACE_ENTERLEAVE( );
-
-    sys::LockEnterLeave lock( m_lock );
-
-    m_connections.erase( connection->id( ) );
-    connection->setDelete();
-    connection->tryDelete();
-
+    start();
 }
 
 void Server::ConnectionThread::routine( )
 {
     TRACE_ENTERLEAVE( );
-
+   
     //
     //  start event loop
     //
     m_base.start( );
 }
 
-
 Server::ConnectionThread::~ConnectionThread( )
 {
     TRACE_ENTERLEAVE( );
 
     m_base.stop();
-
-    while ( !m_connections.empty( ) )
-    {
-        remove( m_connections.begin( )->second );
-    }
-
-    
 }
 
 Server::ProcessPool::ProcessPool( Server& server )
@@ -277,17 +252,24 @@ void Server::ProcessPool::stop()
             ( ( Server::OnThreadStopped ) callback.callback )( thread->data(), callback.data );
         }
 
-        
-
         delete thread;
         m_threads.pop_front();
     }
 }
 
-
 Server::ProcessPool::Context* Server::ProcessPool::get()
 {
     TRACE_ENTERLEAVE();
+    
+    //
+    //  wait for semaphore
+    //
+    m_semaphore.wait();
+    
+    if ( m_stop )
+    {
+        return NULL;
+    }
 
     //
     //  return next context to process or NULL if the queue is empty
@@ -317,10 +299,7 @@ Server::ProcessPool::Context::~Context( )
     
     response->complete();
     delete response;
-
-
 }
-
 
 void Server::ProcessPool::handle( Context* context, const Thread& thread )
 {
@@ -341,9 +320,6 @@ void Server::ProcessPool::handle( Context* context, const Thread& thread )
     {
         ( ( Server::AfterRequest ) afterCallback.callback )( callback.data, thread.data() );
     }
-
-
-
 }
 
 Server::ProcessPool::Thread::Thread( ProcessPool& pool )
@@ -363,13 +339,6 @@ void Server::ProcessPool::Thread::routine()
 
     for ( ;; )
     {
-        m_pool.wait();
-
-        if ( m_pool.needStop( ) )
-        {
-            return;
-        }
-
         Context* context = m_pool.get( );
 
         if ( context )
@@ -379,6 +348,5 @@ void Server::ProcessPool::Thread::routine()
             //
             m_pool.handle( context, *this );
         }
-
     }
 }

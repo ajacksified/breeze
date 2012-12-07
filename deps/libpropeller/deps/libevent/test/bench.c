@@ -37,10 +37,10 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef _EVENT_HAVE_SYS_TIME_H
+#ifdef EVENT__HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
-#ifdef WIN32
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
@@ -52,7 +52,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#ifdef _EVENT_HAVE_UNISTD_H
+#ifdef EVENT__HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include <errno.h>
@@ -125,14 +125,14 @@ run_once(void)
 int
 main(int argc, char **argv)
 {
-#ifndef WIN32
+#ifndef _WIN32
 	struct rlimit rl;
 #endif
 	int i, c;
 	struct timeval *tv;
 	evutil_socket_t *cp;
 
-#ifdef WIN32
+#ifdef _WIN32
 	WSADATA WSAData;
 	WSAStartup(0x101, &WSAData);
 #endif
@@ -156,7 +156,7 @@ main(int argc, char **argv)
 		}
 	}
 
-#ifndef WIN32
+#ifndef _WIN32
 	rl.rlim_cur = rl.rlim_max = num_pipes * 2 + 50;
 	if (setrlimit(RLIMIT_NOFILE, &rl) == -1) {
 		perror("setrlimit");

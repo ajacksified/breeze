@@ -62,18 +62,23 @@ extern "C"
      * @return 1 on success, 0 on failure
      */
     PROPELLER_APIEXP short PROPELLER_API propeller_serverStart( void* server );
-     /*!
+     
+    //
+    // These functions are not meant to be used since server is meant to live throughout the life of the process
+    //
+    
+    /*!
      * Stop server 
      *
      * @return 1 on success, 0 on failure
      */
-    PROPELLER_APIEXP short PROPELLER_API propeller_serverStop( void* server );
+    //PROPELLER_APIEXP short PROPELLER_API propeller_serverStop( void* server );
      /*!
      * Free memory allocated by the server
      *
      * @return none
      */
-    PROPELLER_APIEXP void PROPELLER_API propeller_serverDestroy( void* server );
+    //PROPELLER_APIEXP void PROPELLER_API propeller_serverDestroy( void* server );
 
     //
     //	Server initialization functions (invoke before server start)
@@ -144,7 +149,6 @@ extern "C"
     //	HTTP functions
     //
 
-
     /*!
      * HTTP request handler callback definition
      *
@@ -153,9 +157,6 @@ extern "C"
      * @param data custom data
      */
      typedef void ( PROPELLER_API *OnRequest ) ( const void* request, void* response, void* data, void* threadData );
-
-     typedef void ( PROPELLER_API *AfterRequest ) ( void* data, void* threadData );
-
      /*!
      * callback function called when new request process thread is started
      *
@@ -170,6 +171,8 @@ extern "C"
      * @param data custom data
      */
      typedef void ( PROPELLER_API *OnThreadStopped ) ( void* threadData, void* data );
+     
+     
     /*!
      * Set  handler callback
      *
@@ -179,9 +182,6 @@ extern "C"
      * @return 0 on success, 1 on failure
      */
     PROPELLER_APIEXP short PROPELLER_API propeller_serverSetOnRequestCallback( void* server, OnRequest callback, void* data );
-
-    PROPELLER_APIEXP short PROPELLER_API propeller_serverSetAfterRequestCallback( void* server, AfterRequest callback, void* data );
-
     /*!
      * Set  thread started callback
      *
