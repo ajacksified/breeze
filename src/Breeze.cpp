@@ -329,6 +329,22 @@ void Breeze::loadLibraries( lua_State* lua )
 
  void Breeze::run()
  {
+     //
+     // hardcode 30 seconds read and write timeouts
+     //
+     propeller_serverSetConnectionReadTimeout( m_server, 30 );
+     propeller_serverSetConnectionWriteTimeout( m_server, 30 );
+     
+     if ( m_development )
+     {
+         //
+         // limit number of threads in development mode
+         //
+         propeller_serverSetPoolThreadCount( m_server, 1 );
+         propeller_serverSetConnectionThreadCount( m_server, 1 );
+     }
+          
      propeller_serverStart( m_server );
      
  }
+ 

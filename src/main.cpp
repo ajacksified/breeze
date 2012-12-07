@@ -23,13 +23,14 @@ limitations under the License.
 #include <signal.h>
 
 #include <execinfo.h>
-#include <vector>
+#include "version.h"
+
 
 
 void sigSegvHandler( int sig ) {
   void *array[10];
   size_t size = backtrace( array, 10 );
-  backtrace_symbols_fd(array, size, 2);
+  backtrace_symbols_fd( array, size, 2 );
   exit(1);
 }
 
@@ -160,17 +161,17 @@ int main( int argc, char** argv )
 
     signal( SIGSEGV, sigSegvHandler );
 
-    options.push_back( CmdOption("", "--port", "listening port", "port", true ) );
-    options.push_back( CmdOption("-h", "--help", "prints help", "help" ) );
-
-
+    options.push_back( CmdOption( "", "--port", "listening port", "port", true ) );
+    options.push_back( CmdOption( "-h", "--help", "prints help", "help" ) );
+    options.push_back( CmdOption( "-v", "--version", "prints version", "version" ) );
+//    options.push_back( CmdOption( "", "--connectionThreads", "connection threads", "connectionThreads", true ) );
+  //  options.push_back( CmdOption( "", "--poolThreads", "connection threads", "poolThreads", true ) );
+    
     //
     //  parse command line
     //
-
     std::string script;
     unsigned int port = 8080;
-    
     
     try
     {
@@ -190,11 +191,19 @@ int main( int argc, char** argv )
                 {
                     usage( true );
                 }
+                
+                if ( option->name( ) == "version" )
+                {
+                    printf( "%s \n",  BREEZE_VERSION );
+                    exit(1);
+                }
 
                 if ( option->name( ) == "port" )
                 {
                     port = atoi( option->value( ) );
                 }
+                
+                
              }
             else
             {

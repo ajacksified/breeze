@@ -31,6 +31,7 @@ limitations under the License.
 #include <map>
 #include <deque>
 #include <algorithm>
+#include <vector>
 
 #include "trace.h"
 #include "version.h"
