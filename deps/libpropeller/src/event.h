@@ -180,7 +180,7 @@ namespace libevent
         unsigned int read( char* data, unsigned int length );
         
 
-        void write( const char* data, unsigned int length );
+        void write( const char* data, unsigned int length, bool close = false );
         void writeFormat( const char* format, ... );
         void send();
 
@@ -205,7 +205,6 @@ namespace libevent
 
 
     protected:
-        bool m_close;
         evbuffer* m_input;
         evbuffer* m_output;
         
@@ -223,6 +222,7 @@ namespace libevent
         bool m_closed;
         event* m_deleteEvent;
         const Base& m_base;
+        bool m_close;
     };
 
    

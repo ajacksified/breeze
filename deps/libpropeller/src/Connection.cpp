@@ -98,13 +98,14 @@ void Connection::onRead( )
             delete m_request;
 
             m_request = NULL;
+            m_needClose = true;
+            
             {
-                
                 Response response( *this, status );
                 response.setBody();
             }
 
-            m_close = true;
+            
         }
     }
 }
@@ -306,11 +307,6 @@ Response::Response( Connection& connection, unsigned int status )
 Response::~Response( )
 {
     TRACE_ENTERLEAVE();
-    
-    if ( m_connection.needClose() )
-    {
-        m_connection.setClose();
-    }
  }
 
 
@@ -339,11 +335,8 @@ void Response::init( )
 
 void Response::addHeader( const char* name, const char* value )
 {
-    if ( !m_init )
-    {
-        init();
-    }
-
+    init();
+    
     m_connection.write( name, strlen( name ) );
     m_connection.write( ": ", 2 );
     m_connection.write( value, strlen( value ) );
@@ -362,15 +355,12 @@ void Response::complete( )
 
 void Response::setBody( const char* body  )
 {
-    if ( !m_init )
-    {
-        init();
-    }
-
+    init();
+    
     if ( !body )
     {
         addHeader( "Content-Length", "0");
-        m_connection.write( "\r\n", 2 );
+        m_connection.write( "\r\n", 2, m_connection.needClose() );
         return;
     }
 
@@ -379,7 +369,7 @@ void Response::setBody( const char* body  )
     addHeader( "Content-Length", buffer );
     m_connection.write( "\r\n", 2 );
 
-    m_connection.write( body, strlen( body ) );
+    m_connection.write( body, strlen( body ), m_connection.needClose() );
 
     m_wroteBody = true;
 }

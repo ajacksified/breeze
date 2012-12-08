@@ -36,13 +36,6 @@ public:
     virtual void onRead( );
     virtual void onClose( );
     
-    
-    void setClose()
-    {
-        TRACE_ENTERLEAVE();
-        m_close = true;
-    }
-
     Request* request( )
     {
         return m_request;

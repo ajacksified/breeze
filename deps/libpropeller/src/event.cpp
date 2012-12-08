@@ -145,7 +145,7 @@ namespace libevent
         return bufferevent_read( m_handle, data, length );
     }
     
-    void Connection::write( const char* data, unsigned int length )
+    void Connection::write( const char* data, unsigned int length, bool close )
     {
         TRACE_ENTERLEAVE();
         
@@ -156,6 +156,7 @@ namespace libevent
 #endif
         
         bufferevent_write( m_handle, data, length );
+        m_close = close;
     }
 
       void Connection::send()
@@ -181,11 +182,8 @@ namespace libevent
     {
         TRACE_ENTERLEAVE();
         
-        if ( !m_closed )
-        {
-            bufferevent_disable( m_handle, EV_READ | EV_WRITE );
-            onClose();
-        }
+         bufferevent_disable( m_handle, EV_READ | EV_WRITE );
+         onClose();
     }   
 
     void Connection::onClose()
