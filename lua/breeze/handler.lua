@@ -24,10 +24,8 @@ function Handler:onRequest(url)
     
     request.params = urlparse.parse_query(query) or {}
 
-    if next(request.params) then
-        breeze.logger:debug("request params")
-        breeze.logger:debug(request.params)    
-    end  
+
+    
     
     -- decode request
     if request.type == 'json' then request.body = json.decode(request.body) end
@@ -36,7 +34,8 @@ function Handler:onRequest(url)
 	
 	if response.status == nil then
 		self:_handle(url)
-		self:after()
+        
+        if not response.status then self:after() end
 	else
 		-- before() has set status
 		breeze.logger:info("not handling the request as before has set status")
@@ -65,47 +64,33 @@ function Handler:_handle(url)
     
     local match, slashes = url.path:gsub("/", "/")
     
+    local methodHandler = nil
+    
     -- handle url pattern
     for index, route in ipairs(Handler.routes) do 
         if slashes == route.slashes and request.method == route.method then
             
-            local start, current, startrel, endrel, match = 0, 0, 0, 0, 0
-
-            local rel = url.path:gsub(self.path .. "/", "")
+            local pathTokens = url.path:split("/")
+            local patternTokens = route.pattern:split("/")
+                        
+            for i, token in ipairs(patternTokens) do
+                if token:find(":") then request.params[token:ltrim(":")] = pathTokens[i] end
+            end
             
-            while true do
-                start, current, match = route.pattern:find(":(%w+)", start + 1)
-                
-                if start == nil then break end
-                
-                if endrel == 0 then
-                    startrel = start  
-                else
-                    startrel = endrel + 1
-                end
-                
-                endrel = rel:find("/", endrel + 1)
-                
-                local value = rel:sub(startrel, endrel)
-                if value:sub(-1, -1) == "/" then
-                    value = value:sub(1, -2)
-                end
-                
-                request.params[match] = value
-            end            
-            
-            
-            local methodHandler = self[route.action]
+            methodHandler = self[route.action]
 
             if type(methodHandler) == 'function' then
-                methodHandler(self)
-                return
+                break
             end
         end
     end
     
-  -- handle all 
-    local methodHandler = self[request.method:lower()]
+    if not table.empty(request.params) then
+        breeze.logger:debug("request params " .. tostring(request.params))
+    end  
+    
+  -- handle
+    local methodHandler = methodHandler or self[request.method:lower()]
 
     if type(methodHandler) == 'function' then 
         methodHandler(self) 
@@ -118,9 +103,9 @@ end
 
 function Handler.static.addRoute(route)
 
+    
     local match, slashes = route.pattern:gsub("/", "/")
     route.slashes = slashes
-    route.pattern = route.pattern:sub(route.pattern:find("/:") + 1)
     
     table.insert(Handler.static.routes, route)
 end

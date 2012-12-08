@@ -24,7 +24,19 @@ limitations under the License.
 //
 #define LUA_COMPAT_MODULE
 #include <lua.hpp>
+#include "Metrics.h"
 
+struct ThreadState
+{
+    ThreadState( lua_State* _lua, void* _lock )
+    : lua( _lua ), lock( _lock )
+    {
+    }
+    
+    lua_State* lua;
+    void* lock;
+    Metrics metrics;
+};
 
 class Breeze
 {
@@ -45,13 +57,15 @@ private:
     static void onRequestStatic( const void* request, void* response, void* data, void* threadData );
     void onRequest( const void* request, void* response, void* threadData );
 
-    static void onThreadStartedStatic( void** threadData, void* data );
-    void onThreadStarted( void** threadData );
+    static void onThreadStartedStatic( void** threadData, void* data, void* lock );
+    void onThreadStarted( void** threadData, void* lock );
 
     bool loadScript( lua_State* lua );
     void loadLibraries( lua_State* lua );
     
-
+    static void onTimerStatic( void* data );
+    void onTimer();
+    
 private:
     std::string m_script;
     std::map< lua_State*, int > m_onRequest;
@@ -59,6 +73,9 @@ private:
     void* m_server;
     bool m_development;
     std::string m_environment;
+    std::list< ThreadState* > m_threadStates;
+    Metrics m_metrics;
+    unsigned int m_dataCollectTimeout;
 };
 
 #endif	/* _BREEZE_H */

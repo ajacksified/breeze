@@ -144,7 +144,6 @@ private:
     unsigned int m_bodyLength;
     bool m_parsedHeader;
     unsigned int m_read;
-    
     Connection& m_connection;
 };
 
@@ -169,14 +168,11 @@ public:
     }
 
     void addHeader( const char* name, const char* value );
-    void setBody( const char* body = NULL );
+    void setBody( const char* body = NULL, unsigned int length = 0 );
     
     void complete();
     
-
     ~Response( );
-    
-   
 private:
 
     Response( Connection& connection, unsigned int status = HttpProtocol::Ok );
@@ -185,9 +181,7 @@ private:
 private:
     unsigned int m_status;
     Connection& m_connection;
-    bool m_wroteBody;
     bool m_init;
-
 };
 
 

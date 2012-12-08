@@ -162,8 +162,9 @@ extern "C"
      *
      * @param threadData pointer to pointer to data associated  with a thread
      * @param data custom data
+     * @param lock thread lock
      */
-     typedef void ( PROPELLER_API *OnThreadStarted ) ( void** threadData, void* data );
+     typedef void ( PROPELLER_API *OnThreadStarted ) ( void** threadData, void* data, void* lock );
      /*!
      * callback function called when request process thread is stopped
      *
@@ -172,6 +173,8 @@ extern "C"
      */
      typedef void ( PROPELLER_API *OnThreadStopped ) ( void* threadData, void* data );
      
+     typedef void ( PROPELLER_API *TimerCallback ) ( void* data );
+          
      
     /*!
      * Set  handler callback
@@ -201,7 +204,8 @@ extern "C"
      */
     PROPELLER_APIEXP short PROPELLER_API propeller_serverSetOnThreadStoppedCallback( void* server, OnThreadStopped callback, void* data );
 
-
+    PROPELLER_APIEXP short PROPELLER_API propeller_serverSetTimer( void* server, unsigned int interval, TimerCallback callback, void* data );
+    
     /*!
      * Get request body string
      *
@@ -265,9 +269,15 @@ extern "C"
      *
      * @param response pointer to response
      * @param name string containing reponse body
+     * @param length body length (or zero if body is null terminated string)
      * @return none
      */
-    PROPELLER_APIEXP void PROPELLER_API propeller_responseSetBody( void* response, const char* body );
+    PROPELLER_APIEXP void PROPELLER_API propeller_responseSetBody( void* response, const char* body, unsigned int length );
+    
+    PROPELLER_APIEXP void PROPELLER_API propeller_utilLockEnter( void* lock );
+    
+    PROPELLER_APIEXP void PROPELLER_API propeller_utilLockLeave( void* lock );
+    
 
 #ifdef __cplusplus
 }

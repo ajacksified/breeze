@@ -205,6 +205,7 @@ namespace libevent
 
 
     protected:
+        
         evbuffer* m_input;
         evbuffer* m_output;
         

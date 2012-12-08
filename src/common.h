@@ -36,4 +36,6 @@ limitations under the License.
 #include "trace.h"
 #include "version.h"
 
+#include <sys/time.h>
+
 #endif //_COMMON_H_

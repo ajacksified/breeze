@@ -299,7 +299,7 @@ Request::Request( Connection& connection )
 
 
 Response::Response( Connection& connection, unsigned int status )
-: m_status( status ), m_connection( connection ), m_wroteBody( false ), m_init( false )
+: m_status( status ), m_connection( connection ), m_init( false )
 {
     TRACE_ENTERLEAVE( );
 }
@@ -353,7 +353,7 @@ void Response::complete( )
     m_connection.deref();
 }
 
-void Response::setBody( const char* body  )
+void Response::setBody( const char* body, unsigned int length  )
 {
     init();
     
@@ -364,12 +364,9 @@ void Response::setBody( const char* body  )
         return;
     }
 
-    char buffer[16] = "\0";
-    sprintf( buffer, "%u", ( unsigned int ) strlen( body ) );
+    char buffer[16];
+    sprintf( buffer, "%u", length ? length : ( unsigned int ) strlen( body ) );
     addHeader( "Content-Length", buffer );
     m_connection.write( "\r\n", 2 );
-
-    m_connection.write( body, strlen( body ), m_connection.needClose() );
-
-    m_wroteBody = true;
+    m_connection.write( body, length ? length : strlen( body ), m_connection.needClose() );
 }

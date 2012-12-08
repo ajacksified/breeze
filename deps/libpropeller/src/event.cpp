@@ -181,9 +181,10 @@ namespace libevent
     void Connection::close()
     {
         TRACE_ENTERLEAVE();
+        m_socket->shutdown();
         
-         bufferevent_disable( m_handle, EV_READ | EV_WRITE );
-         onClose();
+        bufferevent_disable( m_handle, EV_READ | EV_WRITE );
+        onClose();
     }   
 
     void Connection::onClose()

@@ -41,6 +41,9 @@ public:
     //
     virtual void onAccept();
 
+    //
+    //  Generic callback data
+    //
     struct Callback
     {
         Callback()
@@ -48,25 +51,35 @@ public:
         {
 
         }
+        
+        Callback( void* _callback, void* _data )
+        : callback( _callback ), data( _data )
+        {
+            
+        }
 
         void* callback;
         void* data;
     };
 
+    
     //
     //  Handler callback
     //
     typedef void ( API_CALL *OnRequest ) ( const Request* request, Response* response, void* data, void* threadData );
 
-    typedef void ( API_CALL *AfterRequest ) ( void* data, void* threadData );
+    
 
     //
     //  Thread callbacks
     //
-    typedef void ( API_CALL *OnThreadStarted ) ( void** threadData, void* data );
-
-    typedef void ( API_CALL *OnThreadStopped ) ( void* threadData, void* data );
-
+    typedef void ( API_CALL *OnThreadStarted ) ( void** threadData, void* data, void* lock );
+    
+    typedef void ( API_CALL *ThreadCallback ) ( void* data, void* threadData );
+    
+    typedef void ( API_CALL *TimerCallback ) ( void* data );
+    
+    
     void setOnRequestCallback( OnRequest callback, void* data = NULL )
     {
         m_onRequestCallback.callback = ( void* ) callback;
@@ -79,11 +92,13 @@ public:
         m_onThreadStartedCallback.data = data;
     }
 
-    void setOnThreadStoppedCallback( OnThreadStopped callback, void* data )
+    void setOnThreadStoppedCallback( ThreadCallback callback, void* data )
     {
         m_onThreadStoppedCallback.callback = ( void* ) callback;
         m_onThreadStoppedCallback.data = data;
     }
+    
+    void setTimer( unsigned int interval, TimerCallback callback, void* data );
 
     const Callback& onRequestCallback() const
     {
@@ -97,7 +112,7 @@ public:
     }
 
 
-    void setAfterRequestCallback( AfterRequest callback, void* data )
+    void setAfterRequestCallback( ThreadCallback callback, void* data )
     {
         m_afterRequestCallback.callback = ( void* ) callback;
         m_afterRequestCallback.data = data;
@@ -114,14 +129,7 @@ public:
     }
 
     void process( Request* request, Response* response );
-
-    void remove( Connection* );
-
-     libevent::Base& base()
-     {
-            return m_base;
-     }
-
+    
     class ConnectionThread : public sys::Thread
     {
     public:
@@ -224,16 +232,17 @@ public:
                 m_data = data;
             }
             
+            sys::Lock* lock()
+            {
+                return &m_lock;
+            }
+            
         private:
             ProcessPool& m_pool;
             void* m_data;
-            
+            sys::Lock m_lock;
         };
 
-        void wait()
-        {
-            m_semaphore.wait();
-        }
         
         Context* get();
         bool needStop() const
@@ -252,7 +261,21 @@ public:
         bool m_stop;
     };
     
-protected:
+private:
+    
+    class TimerThread: public sys::Thread, public libevent::Timer
+    {
+    public:
+        TimerThread( unsigned int interval, TimerCallback callback, void* data );
+        
+    private:
+        virtual void routine();
+        virtual void onTimer();
+        
+    private:
+        Callback m_callback;
+        libevent::Base m_base;
+    };
    
 
 private:
@@ -270,6 +293,8 @@ private:
 
     unsigned int m_poolThreadCount;
     ProcessPool m_pool;
+    
+    TimerThread* m_timerThread;
     
 };
 

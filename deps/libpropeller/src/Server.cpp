@@ -20,7 +20,7 @@ limitations under the License.
 
 
 Server::Server( unsigned int port )
-: libevent::Listener( port ), m_connectionThreadCount( 10 ), m_connectionReadTimeout( 0 ), m_connectionWriteTimeout( 0 ),  m_pool( *this ), m_poolThreadCount( 20 )
+: libevent::Listener( port ), m_connectionThreadCount( 10 ), m_connectionReadTimeout( 0 ), m_connectionWriteTimeout( 0 ),  m_pool( *this ), m_poolThreadCount( 20 ), m_timerThread( NULL )
 {
     TRACE_ENTERLEAVE( );
 
@@ -69,7 +69,7 @@ void Server::start( )
     TRACE_ENTERLEAVE( );
 
     //
-    //  start listening 
+    //  bind to port listening 
     //
     listen( m_base );
 
@@ -85,6 +85,11 @@ void Server::start( )
     //  start process pool
     //
     m_pool.start( m_poolThreadCount );
+    
+    if ( m_timerThread )
+    {
+        m_timerThread->start();
+    }
     
      //
     //  start event base
@@ -129,6 +134,14 @@ void Server::process( Request* request, Response* response )
 
     m_pool.process( request, response );
 }
+
+void Server::setTimer( unsigned int interval, TimerCallback callback, void* data )
+{
+    TRACE_ENTERLEAVE();
+    
+    m_timerThread = new TimerThread( interval, callback, data );
+}
+
 
 Server::ConnectionThread::ConnectionThread( Server& server )
 : m_server( server )
@@ -204,7 +217,7 @@ void Server::ProcessPool::start( unsigned int threads )
         {
             void* threadData = NULL;
 
-            ( ( Server::OnThreadStarted ) callback.callback )( &threadData, callback.data );
+            ( ( Server::OnThreadStarted ) callback.callback )( &threadData, callback.data, thread->lock() );
             thread->setData( threadData );
         }
 
@@ -249,7 +262,7 @@ void Server::ProcessPool::stop()
 
         if ( callback.callback )
         {
-            ( ( Server::OnThreadStopped ) callback.callback )( thread->data(), callback.data );
+            ( ( Server::ThreadCallback ) callback.callback )( thread->data(), callback.data );
         }
 
         delete thread;
@@ -318,7 +331,7 @@ void Server::ProcessPool::handle( Context* context, const Thread& thread )
 
     if ( afterCallback.callback )
     {
-        ( ( Server::AfterRequest ) afterCallback.callback )( callback.data, thread.data() );
+        ( ( Server::ThreadCallback ) afterCallback.callback )( callback.data, thread.data( ));
     }
 }
 
@@ -349,4 +362,24 @@ void Server::ProcessPool::Thread::routine()
             m_pool.handle( context, *this );
         }
     }
+}
+
+Server::TimerThread::TimerThread( unsigned int interval, TimerCallback callback, void* data )
+: Timer( interval ), m_callback( ( void* ) callback, data )
+{
+    assign( m_base );
+}
+
+void Server::TimerThread::routine()
+{
+    TRACE_ENTERLEAVE();
+    
+    m_base.start();
+}
+
+void Server::TimerThread::onTimer()
+{
+    TRACE_ENTERLEAVE();
+    
+    ( ( TimerCallback ) m_callback.callback )( m_callback.data );
 }

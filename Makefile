@@ -44,6 +44,7 @@ BREEZE_CXXFLAGS = -Ideps/libpropeller/include -Ideps/lua/src -Ideps/cjson -O2 -D
 	$(CPPFLAGS) $(CXXFLAGS)
 BREEZE_OBJECTS =  \
 	obj/breeze_breeze.o \
+	obj/breeze_metrics.o \
 	obj/breeze_main.o \
 	obj/breeze_trace.o
 
@@ -91,6 +92,9 @@ uninstall_breeze:
 
 obj/breeze_breeze.o: src/Breeze.cpp
 	$(CXX) -c -o $@ $(BREEZE_CXXFLAGS) $(CPPDEPS) $<
+	
+obj/breeze_metrics.o: src/Metrics.cpp
+	$(CXX) -c -o $@ $(BREEZE_CXXFLAGS) $(CPPDEPS) $<	
 
 obj/breeze_main.o: src/main.cpp
 	$(CXX) -c -o $@ $(BREEZE_CXXFLAGS) $(CPPDEPS) $<

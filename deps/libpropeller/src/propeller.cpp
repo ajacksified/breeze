@@ -122,10 +122,18 @@ PROPELLER_APIEXP short PROPELLER_API propeller_serverSetOnThreadStartedCallback(
 
 PROPELLER_APIEXP short PROPELLER_API propeller_serverSetOnThreadStoppedCallback( void* server, OnThreadStarted callback, void* data )
 {
-    ( ( Server* ) server )->setOnThreadStoppedCallback( ( Server::OnThreadStopped ) callback, data );
+    ( ( Server* ) server )->setOnThreadStoppedCallback( ( Server::ThreadCallback ) callback, data );
 
     return PROPELLER_STATUS_SUCCESS;
 }
+
+PROPELLER_APIEXP short PROPELLER_API propeller_serverSetTimer( void* server, unsigned int interval, TimerCallback callback, void* data )
+{
+    ( ( Server* ) server )->setTimer( interval, ( Server::TimerCallback ) callback, data );
+    
+    return PROPELLER_STATUS_SUCCESS;
+}
+
 
 PROPELLER_APIEXP const char* PROPELLER_API propeller_requestGetBody( const void* request )
 {
@@ -164,9 +172,18 @@ PROPELLER_APIEXP void PROPELLER_API propeller_responseSetHeader( void* response,
     ( ( Response* )response)->addHeader( name, value );
 }
 
-PROPELLER_APIEXP void PROPELLER_API propeller_responseSetBody( void* response, const char* body )
+PROPELLER_APIEXP void PROPELLER_API propeller_responseSetBody( void* response, const char* body, unsigned int length )
 {
-    ( ( Response* )response )->setBody( body );
+    ( ( Response* )response )->setBody( body, length );
+}
 
+PROPELLER_APIEXP void PROPELLER_API propeller_utilLockEnter( void* lock )
+{
+    ( ( sys::Lock* ) lock )->lock();
+}
+
+PROPELLER_APIEXP void PROPELLER_API propeller_utilLockLeave( void* lock )
+{
+    ( ( sys::Lock* ) lock )->unlock();
 }
 

@@ -112,34 +112,45 @@ namespace sys
     {
         return &m_lock;
     }
+    
+    void Lock::lock()
+    {
+ #ifdef WIN32
+        EnterCriticalSection( m_lock );
+#else
+        pthread_mutex_lock( &m_lock );
+#endif
+    }
+    
+    
+    void Lock::unlock()
+    {
+ #ifdef WIN32
+        EnterCriticalSection( m_lock );
+#else
+        pthread_mutex_unlock( &m_lock );
+#endif
+    }
+    
+    
 
     //
     //	LockEnterLeave
     //
-
     LockEnterLeave::LockEnterLeave ( Lock& lock )
     : m_lock ( lock )
     {
-#ifdef WIN32
-        EnterCriticalSection( m_lock.handle( ) );
-#else
-        pthread_mutex_lock( m_lock.handle( ) );
-#endif
+        m_lock.lock();
     }
 
     LockEnterLeave::~LockEnterLeave ( )
     {
-#ifdef WIN32																							
-        LeaveCriticalSection( m_lock.handle( ) );
-#else
-        pthread_mutex_unlock( m_lock.handle( ) );
-#endif
+        m_lock.unlock();    
     }
 
     //
     //	Event
     //
-
     Event::Event ( )
     : m_disabled ( false )
     {

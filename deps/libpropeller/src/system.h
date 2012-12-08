@@ -60,7 +60,6 @@ namespace sys
 #define SEMAPHORE_HANDLE HANDLE
 #define PIPE_HANDLE HANDLE
 #define API_CALL __stdcall
-#define fd_set FD_SET
 #else
 #define LOCK_HANDLE pthread_mutex_t
 #define THREAD_HANDLE pthread_t
@@ -102,9 +101,13 @@ namespace sys
     public:
         Lock( );
         ~Lock( );
+        
+        void lock();
+        void unlock();
 
     private:
         LOCK_HANDLE* handle( );
+        
 
     private:
         LOCK_HANDLE m_lock;

@@ -18,18 +18,13 @@ breeze.handlers = {}
 breeze.routes = {}
 
 breeze.environment = breezeApi.environment
-breeze.logger = logging.new(function(self, level, message)
+    breeze.logger = logging.new(function(self, level, message)
                             io.stdout:write(logging.prepareLogMsg(nil, os.date(), level, message))
                             return true
                             end
                             )
 
 local function findHandler(url)
-        -- get url base path
-    local path = url:split('/')[2]
-    -- look for exact match
-    local handler = breeze.handlers[path]
-    
     return handler, path
 end
 
@@ -46,12 +41,15 @@ function breeze.addRoute(definition)
     end
     
     -- remove trailing slash
-    if pattern:sub(-1, -1) == "/" then
-        pattern = pattern:sub(1, -2)
-    end
+    pattern:rtrim("/")
 
+    local path = pattern
+    
     -- get base path
-    local path = pattern:split('/')[2]
+    if pattern:find("/:") > 1 then
+       -- get base path
+           path = pattern:sub(1, pattern:find("/:") - 1)
+       end
     
     -- check if there is a handler for this path
     if not breeze.handlers[path] then
@@ -78,10 +76,23 @@ local function onRequest(req, res)
     
     -- look for handler
     local urlinfo = url.parse(request.url)
+    
+    local path = urlinfo.path
+    -- get url base path
 
-    -- look for exact match
-    local handler, path = findHandler(urlinfo.path)
+    local handler = breeze.handlers[path]
 
+    -- look for closest match
+    if not handler then
+        local parts = list.reverse(request.url:split('/'))
+        
+        for i, part in ipairs(parts) do 
+            path = path:sub(1, #path - #part):rtrim("/")
+            handler = breeze.handlers[path]
+            if handler then break end
+        end
+    end
+    
     -- not found    
     if not handler then
         response:setStatus(404)
@@ -102,3 +113,12 @@ local function onRequest(req, res)
 end
 
 breezeApi.setOnRequest(onRequest)
+
+-- /metrics
+MetricsHandler = class('MetricsHandler', Handler)
+
+function MetricsHandler:get()
+    response.body = breezeApi.metrics or {}
+end 
+
+breeze.addHandler{path='/metrics', handler=MetricsHandler}
