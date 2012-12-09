@@ -47,12 +47,21 @@ public:
     
 
     static Breeze* instance();
-    static Breeze* create( unsigned int port, const std::string& script );
+    static Breeze* create( unsigned int port );
 
     void setEnvironment( const char* environment );
+    void addPath( const std::string& path )
+    {
+        m_paths.push_back( path );
+    }
+    
+    void setScript( const std::string& script )
+    {
+        m_script = script;
+    }
 
 private:
-    Breeze( unsigned int port, const std::string& script );
+    Breeze( unsigned int port );
     
     static void onRequestStatic( const void* request, void* response, void* data, void* threadData );
     void onRequest( const void* request, void* response, void* threadData );
@@ -76,6 +85,7 @@ private:
     std::list< ThreadState* > m_threadStates;
     Metrics m_metrics;
     unsigned int m_dataCollectTimeout;
+    std::list< std::string > m_paths;
 };
 
 #endif	/* _BREEZE_H */

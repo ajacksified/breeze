@@ -5,6 +5,7 @@ require 'middleclass'
 require 'breeze.request'
 require 'breeze.response'
 require 'breeze.handler'
+require 'breeze.static_handler'
 
 --- lua std lib
 require 'std'
@@ -63,7 +64,7 @@ end
 -- @param handler definition as a table {path="/hello", handler=HandlerClass}
 -- any request to the url containing path specified in handler definition will be passed to instance of handler class. If exists method corresponding to HTTP method is called
 function breeze.addHandler(definition)
-    breeze.handlers[definition.path] = definition.handler
+    breeze.handlers[definition.path] = {handler=definition.handler, options=definition.options}
 end
 
 local function onRequest(req, res)
@@ -80,33 +81,38 @@ local function onRequest(req, res)
     local path = urlinfo.path
     -- get url base path
 
-    local handler = breeze.handlers[path]
-
+    local definition = breeze.handlers[path]
+    
     -- look for closest match
-    if not handler then
+    if not definition then
         local parts = list.reverse(request.url:split('/'))
-        
         for i, part in ipairs(parts) do 
-            path = path:sub(1, #path - #part):rtrim("/")
-            handler = breeze.handlers[path]
-            if handler then break end
+            path = path:sub(1, #path - #part)
+            
+            if #path > 1 then path = path:rtrim("/") end 
+            definition = breeze.handlers[path]
+            if definition then break end
         end
     end
     
     -- not found    
-    if not handler then
+    if not definition then
         response:setStatus(404)
         response:setBody(urlinfo.path .. " not found")
         breeze.logger:info("response: %d", 404)
         return
     end
     
+
+    local handler = definition.handler
+    
     if not instanceOf(Handler, handler) then
         --create handler instance
-        handler = handler:new(path)
-        breeze.handlers[path] = handler
+        handler = handler:new(definition.options)
+        definition.handler = handler
     end
     
+    -- handle request
     handler:onRequest(urlinfo)
     
     breeze.logger:info("response: %d", response.status)
@@ -116,7 +122,6 @@ breezeApi.setOnRequest(onRequest)
 
 -- /metrics
 MetricsHandler = class('MetricsHandler', Handler)
-
 function MetricsHandler:get()
     response.body = breezeApi.metrics or {}
 end 

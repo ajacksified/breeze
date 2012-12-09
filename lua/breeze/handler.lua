@@ -1,12 +1,13 @@
 Handler = class('Handler')
 local urlparse = require 'url'
 
-function Handler:initialize(path)
-    self.path = path
+function Handler:initialize(options)
+    self.options = options or {}
 end
 
 --- Override to add any logic to be executed before all requests are handled
 function Handler:before()
+
 end
 
 --- Override to add any logic to be executed after all requests are handled
@@ -24,9 +25,6 @@ function Handler:onRequest(url)
     
     request.params = urlparse.parse_query(query) or {}
 
-
-    
-    
     -- decode request
     if request.type == 'json' then request.body = json.decode(request.body) end
 
@@ -34,8 +32,7 @@ function Handler:onRequest(url)
 	
 	if response.status == nil then
 		self:_handle(url)
-        
-        if not response.status then self:after() end
+        self:after()
 	else
 		-- before() has set status
 		breeze.logger:info("not handling the request as before has set status")
@@ -54,6 +51,8 @@ function Handler:_send()
 	elseif response.type == 'text' then 
 	    response:setHeader('Content-Type', 'text/plain') 
 	end
+    
+    -- add more content types here
     
 	response:setBody(response.body) 
 end
@@ -91,7 +90,7 @@ function Handler:_handle(url)
     
   -- handle
     local methodHandler = methodHandler or self[request.method:lower()]
-
+    
     if type(methodHandler) == 'function' then 
         methodHandler(self) 
     else
@@ -102,7 +101,6 @@ function Handler:_handle(url)
 end
 
 function Handler.static.addRoute(route)
-
     
     local match, slashes = route.pattern:gsub("/", "/")
     route.slashes = slashes

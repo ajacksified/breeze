@@ -115,8 +115,8 @@ int responseSetStatus( lua_State* lua )
     return 0;
 }
 
-Breeze::Breeze( unsigned int port, const std::string& script )
-: m_script( script ), m_development( false ), m_dataCollectTimeout( 20 )
+Breeze::Breeze( unsigned int port )
+: m_development( false ), m_dataCollectTimeout( 20 )
 {
     m_server = propeller_serverCreate( port );
 
@@ -134,11 +134,11 @@ Breeze* Breeze::instance()
     return m_instance;
 }
 
-Breeze* Breeze::create( unsigned int port, const std::string& script )
+Breeze* Breeze::create( unsigned int port )
 {
     if ( !m_instance )
     {
-        m_instance = new Breeze( port, script );
+        m_instance = new Breeze( port );
     }
 
     return m_instance;
@@ -331,9 +331,16 @@ void Breeze::loadLibraries( lua_State* lua )
     lua_getglobal( lua, "package" );
     lua_getfield( lua, -1, "path" );
     std::string path = lua_tostring( lua, -1 );
-    path.append( ";" );
-    path.append( BREEZE_PATH );
-    path.append( "/?.lua" );
+    
+    for ( std::list< std::string >::iterator i = m_paths.begin(); i != m_paths.end(); i++ )
+    {
+        path.append( ";" );
+        path.append( i->c_str() );
+        path.append( "/?.lua" );
+    }
+    
+    TRACE( "%s", path.c_str() );
+    
     lua_pop( lua, 1 );
     lua_pushstring( lua, path.c_str( ) );
     lua_setfield( lua, -2, "path" );
@@ -383,6 +390,8 @@ void Breeze::loadLibraries( lua_State* lua )
          propeller_serverSetConnectionThreadCount( m_server, 1 );
      }
      
+      
+    
      propeller_serverSetTimer( m_server, m_dataCollectTimeout, onTimerStatic, ( void* ) this );
           
      propeller_serverStart( m_server );

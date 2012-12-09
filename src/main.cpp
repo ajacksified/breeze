@@ -223,9 +223,44 @@ int main( int argc, char** argv )
     }
     
 
-    Breeze* breeze = Breeze::create( port, script.c_str() );
+    Breeze* breeze = Breeze::create( port );
     
     breeze->setEnvironment( getenv("BREEZE_ENV") );
+    
+    
+    //      
+    //  add paths to locate lua files
+    //
+    breeze->addPath( BREEZE_PATH );
+    std::string path;
+    size_t lastSlash = script.rfind( '/' );
+    
+    if ( lastSlash != std::string::npos )
+    {
+        path = script.substr( 0, lastSlash );
+        script = script.substr( lastSlash + 1 );
+    }
+        
+    //
+    //  get script path
+    //
+    if ( script[0] != '/' )
+    {
+        char buffer[256] = "/0";
+        getcwd( buffer, sizeof( buffer ) );
+        if ( path != "." )
+        {
+            path = std::string( buffer ) + "/" + path;
+        }
+    }
+    
+    //
+    //  set working directory
+    //
+    chdir( path.c_str() );
+    
+    breeze->addPath( path );
+    breeze->setScript( script );
     
     try
     {

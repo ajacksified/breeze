@@ -9,7 +9,7 @@
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-#define STATS_REFRESH_TIMEOUT 100
+#define STATS_REFRESH_TIMEOUT 300
 
 Metrics::Metrics( )
 {
