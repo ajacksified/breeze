@@ -120,7 +120,14 @@ void Server::onAccept( )
     //
     //  create new connection  and assign it to connection thread. it mantains referencre count and will delete itself when no longer referenced
     //
-    new Connection( *thread, m_pool, socket );
+    try
+    {
+        new Connection( *thread, m_pool, socket );
+    }
+    catch (...)
+    {
+        
+    }
     
     //
     //  add connection thread to back

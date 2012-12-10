@@ -22,11 +22,6 @@ Connection::Connection( const Server::ConnectionThread& thread, Server::ProcessP
     TRACE_ENTERLEAVE();
     
     //
-    //  rescan event base for new events
-    //
-    thread.base().rescan();
-
-    //
     //  set timeouts if needed
     //
     if ( thread.server().connectionReadTimeout( ) > 0 )
