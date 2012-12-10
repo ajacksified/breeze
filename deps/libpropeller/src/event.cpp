@@ -111,11 +111,7 @@ namespace libevent
             throw GeneralError;
         }
         
-        if ( bufferevent_setcb( m_handle, onReadStatic, onWriteStatic, onErrorStatic, this ) != 0 )
-        {
-            TRACE_ERROR( "bufferevent_setcb failed", "" );
-            throw GeneralError;
-        };
+        bufferevent_setcb( m_handle, onReadStatic, onWriteStatic, onErrorStatic, this ) != 0 )
         
         if ( bufferevent_enable( m_handle, EV_READ | EV_WRITE  ) != 0 ) 
         {
