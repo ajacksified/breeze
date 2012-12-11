@@ -31,15 +31,43 @@ class Connection : public libevent::Connection
 
 public:
 
-    Connection( const Server::ConnectionThread& thread, Server::ProcessPool& pool, sys::Socket* socket );
+    Connection( Server::ConnectionThread& thread, Server::ProcessPool& pool, sys::Socket* socket );
     virtual ~Connection( );
     virtual void onRead( );
     virtual void onClose( );
+    virtual void onWrite();
     
     Request* request( )
     {
         return m_request;
     }
+    
+    void setDelete()
+    {
+        TRACE_ENTERLEAVE();
+        sys::LockEnterLeave lock( m_lock );
+        
+        if ( !m_delete )
+        {
+            m_delete = true;
+        }
+        
+        checkDelete();
+    }
+    
+    void checkDelete()
+    {
+        TRACE_ENTERLEAVE();
+        
+        sys::LockEnterLeave lock( m_lock );
+        
+        if ( m_delete )
+        {
+            m_thread.remove( this );
+            scheduleDelete();
+        }
+    }
+    
 
     //
     //  increase reference count
@@ -78,11 +106,14 @@ public:
 
 private:
     Request* m_request;
-    const Server::ConnectionThread& m_thread;
+    Server::ConnectionThread& m_thread;
     Server::ProcessPool& m_pool;
     
     unsigned int m_ref;
     bool m_needClose;
+    bool m_delete;
+    bool m_initialized;
+    sys::Lock m_lock;
     
 };
 
@@ -182,6 +213,8 @@ private:
     unsigned int m_status;
     Connection& m_connection;
     bool m_init;
+    sys::Lock m_lock;
+    
 };
 
 

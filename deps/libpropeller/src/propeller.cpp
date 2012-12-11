@@ -50,6 +50,10 @@ PROPELLER_APIEXP short PROPELLER_API propeller_serverStart( void* server )
 //    return PROPELLER_STATUS_SUCCESS;
 //}
 
+PROPELLER_APIEXP void PROPELLER_API propeller_serverDestroy( void* server )
+{
+    delete ( ( Server*  )server );
+}
 
 PROPELLER_APIEXP short PROPELLER_API propeller_serverSetConnectionThreadCount( void* server, unsigned int threads )
 {

@@ -16,28 +16,10 @@ limitations under the License.
 
 #include "Connection.h"
 
-Connection::Connection( const Server::ConnectionThread& thread, Server::ProcessPool& pool, sys::Socket* socket )
- : libevent::Connection( socket, thread.base() ), m_request( NULL ), m_thread( thread ),  m_ref( 0 ), m_needClose( false ), m_pool( pool )
+Connection::Connection( Server::ConnectionThread& thread, Server::ProcessPool& pool, sys::Socket* socket )
+ : libevent::Connection( socket, thread.base() ), m_request( NULL ), m_thread( thread ),  m_ref( 0 ), m_needClose( false ), m_pool( pool ), m_delete( false ), m_initialized( false )
  {
     TRACE_ENTERLEAVE();
-    
-    //
-    //  set timeouts if needed
-    //
-    if ( thread.server().connectionReadTimeout( ) > 0 )
-    {
-        setReadTimeout( thread.server().connectionReadTimeout( ) );
-    }
-
-    if ( thread.server().connectionWriteTimeout( ) > 0 )
-    {
-        setWriteTimeout( thread.server().connectionWriteTimeout( ) );
-    }
-    
-    //
-    //  increase reference count
-    //  
-    ref();
  }
 
 Connection::~Connection()
@@ -49,6 +31,33 @@ Connection::~Connection()
         delete m_request;
     }
 }
+
+void Connection::onWrite( )
+{
+    TRACE_ENTERLEAVE();
+    
+    if ( !m_initialized )
+    {
+        //
+        //  set timeouts if needed
+        //
+        if ( m_thread.server( ).connectionReadTimeout( ) > 0 )
+        {
+            setReadTimeout( m_thread.server( ).connectionReadTimeout( ) );
+        }
+
+        if ( m_thread.server( ).connectionWriteTimeout( ) > 0 )
+        {
+            setWriteTimeout( m_thread.server( ).connectionWriteTimeout( ) );
+        }
+    }
+    
+    if ( m_close )
+    {
+        close();
+    }
+}
+
 
 //
 //  on read callback  
@@ -72,7 +81,7 @@ void Connection::onRead( )
         //
         //  dispatch request for processing
         //
-        ref( );
+        
         m_pool.process( m_request, new Response( *this, HttpProtocol::Ok ) );
 
         const char* header = m_request->header( "connection" );
@@ -100,7 +109,6 @@ void Connection::onRead( )
                 response.setBody();
             }
 
-            
         }
     }
 }
@@ -108,8 +116,7 @@ void Connection::onRead( )
 void Connection::onClose( )
 {
     TRACE_ENTERLEAVE();
-
-    deref();
+    setDelete();
 }
 
 Request::~Request()
@@ -119,8 +126,6 @@ Request::~Request()
     //
     //  set close connection flag if needed
     //
- 
-    
     if ( m_body )
     {
         delete[] m_body;
@@ -342,10 +347,7 @@ void Response::complete( )
 {
     TRACE_ENTERLEAVE();
     
-    //
-    //  decrease connection reference count
-    //
-    m_connection.deref();
+    m_connection.checkDelete();
 }
 
 void Response::setBody( const char* body, unsigned int length  )

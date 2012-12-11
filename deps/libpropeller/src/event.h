@@ -39,6 +39,7 @@ namespace libevent
     public:
         static void setSocketNonBlocking( sys::Socket& socket );
         static void initThreads();
+        static void shutdown();
     };
     
 
@@ -172,8 +173,16 @@ namespace libevent
         virtual ~Connection();
 
         void assign( const Base& base );
-        virtual void onRead();
-        virtual void onWrite();
+        virtual void onRead()
+        {
+            
+        }
+        
+        virtual void onWrite()
+        {
+            
+        }
+        
         virtual void onError( short error );
 
         
@@ -183,9 +192,12 @@ namespace libevent
         void write( const char* data, unsigned int length, bool close = false );
         void writeFormat( const char* format, ... );
         void send();
-
         void close();
-        virtual void onClose();
+        
+        virtual void onClose()
+        {
+            
+        }
         
         char* readLine();
         unsigned int inputLength();
@@ -208,6 +220,7 @@ namespace libevent
         
         evbuffer* m_input;
         evbuffer* m_output;
+        bool m_close;
         
     private:
         static void onReadStatic( bufferevent* bev, void* ctx );
@@ -220,10 +233,8 @@ namespace libevent
         bufferevent* m_handle;
         sys::Socket* m_socket;
         intptr_t m_id;
-        bool m_closed;
         event* m_deleteEvent;
         const Base& m_base;
-        bool m_close;
     };
 
    

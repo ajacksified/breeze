@@ -50,6 +50,11 @@ namespace libevent
      
      //event_enable_debug_logging(EVENT_DBG_ALL);
     }
+    
+    void General::shutdown()
+    {
+        libevent_global_shutdown();
+    }
 
     Listener::Listener( unsigned int port )
     : m_listenerEvent( NULL ), m_port( port )
@@ -98,7 +103,7 @@ namespace libevent
     }
 
     Connection::Connection( sys::Socket* socket, const Base& base )
-    : m_socket( socket ), m_handle( NULL ), m_close( false ), m_id( ( intptr_t ) this ), m_closed( false ), m_deleteEvent( NULL ), m_base( base )
+    : m_socket( socket ), m_handle( NULL ), m_close( false ), m_id( ( intptr_t ) this ),  m_deleteEvent( NULL ), m_base( base )
     {
         TRACE_ENTERLEAVE();
         General::setSocketNonBlocking( *socket );
@@ -126,8 +131,6 @@ namespace libevent
     Connection::~Connection()
     {
         TRACE_ENTERLEAVE();
-
-        flush();
         
         if ( m_socket )
         {
@@ -141,7 +144,7 @@ namespace libevent
 
         if ( m_deleteEvent )
         {
-            evtimer_del( m_deleteEvent );
+            event_free( m_deleteEvent );
         }
     }
 
@@ -152,19 +155,12 @@ namespace libevent
     
     void Connection::write( const char* data, unsigned int length, bool close )
     {
-        TRACE_ENTERLEAVE();
-        
-#ifdef _PROPELLER_DEBUG
-        std::string s;
-        s.append( data, length );
-        TRACE( "%s", s.c_str() );
-#endif
         
         bufferevent_write( m_handle, data, length );
         m_close = close;
     }
 
-      void Connection::send()
+    void Connection::send()
     {
         evbuffer_add_buffer( bufferevent_get_output( m_handle ), m_output );
     }
@@ -187,30 +183,10 @@ namespace libevent
     {
         TRACE_ENTERLEAVE();
         m_socket->shutdown();
-        
         bufferevent_disable( m_handle, EV_READ | EV_WRITE );
         onClose();
     }   
-
-    void Connection::onClose()
-    {
-    }
     
-    void Connection::onRead()
-    {
-        
-    }
-
-    void Connection::onWrite()
-    {
-        TRACE_ENTERLEAVE();
-        
-        if ( m_close  )
-        {
-            close();
-        }
-    }
-
     void Connection::onError( short error )
     {
         TRACE_ENTERLEAVE();
@@ -280,7 +256,7 @@ namespace libevent
 
     void Connection::flush()
     {
-       bufferevent_flush( m_handle, EV_WRITE, BEV_FINISHED );
+       bufferevent_flush( m_handle, EV_WRITE, BEV_FLUSH );
     }
 
     void Connection::setWriteTimeout( unsigned int value )
@@ -295,12 +271,15 @@ namespace libevent
     
     void Connection::scheduleDelete()
     {
-        //
-        //  schedule deletion event
-        //
-        m_deleteEvent = evtimer_new( m_base, onDeleteStatic, this );
-        struct timeval timeout = { 0, 0 };
-        evtimer_add( m_deleteEvent, &timeout );
+        if ( !m_deleteEvent )
+        {
+            //
+            //  schedule deletion event
+            //
+            m_deleteEvent = evtimer_new( m_base, onDeleteStatic, this );
+            struct timeval timeout = { 0, 0 };
+            evtimer_add( m_deleteEvent, &timeout );
+        }
     }
     
     void Connection::onDeleteStatic( evutil_socket_t fd, short what, void *arg )
@@ -345,7 +324,4 @@ namespace libevent
     {
         ( ( Timer* ) arg )->onTimer();
     }
-
-
-
 }

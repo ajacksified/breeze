@@ -20,7 +20,7 @@ limitations under the License.
 
 
 Server::Server( unsigned int port )
-: libevent::Listener( port ), m_connectionThreadCount( 10 ), m_connectionReadTimeout( 0 ), m_connectionWriteTimeout( 0 ),  m_pool( *this ), m_poolThreadCount( 20 ), m_timerThread( NULL )
+: libevent::Listener( port ), m_connectionThreadCount( 1 ), m_connectionReadTimeout( 0 ), m_connectionWriteTimeout( 0 ),  m_pool( *this ), m_poolThreadCount( 1 ), m_timerThread( NULL )
 {
     TRACE_ENTERLEAVE( );
 
@@ -34,6 +34,9 @@ Server::~Server( )
     TRACE_ENTERLEAVE( );
 
     stop( );
+    
+    libevent::General::shutdown();
+    
 }
 
 void Server::stop( )
@@ -61,6 +64,11 @@ void Server::stop( )
         delete thread;
 
         m_connectionThreads.pop_front();
+    }
+    
+    if ( m_timerThread )
+    {
+        delete m_timerThread;
     }
 }
 
@@ -122,7 +130,7 @@ void Server::onAccept( )
     //
     try
     {
-        new Connection( *thread, m_pool, socket );
+       thread->add( new Connection( *thread, m_pool, socket ) );
     }
     catch (...)
     {
@@ -158,6 +166,33 @@ Server::ConnectionThread::ConnectionThread( Server& server )
     start();
 }
 
+void Server::ConnectionThread::add( Connection* connection )
+{
+    TRACE_ENTERLEAVE();
+    
+    sys::LockEnterLeave lock( m_lock );
+    
+    m_connections[ connection->id() ] = connection;
+}
+
+void Server::ConnectionThread::remove( Connection* connection, bool needDelete )
+{
+    TRACE_ENTERLEAVE();
+    
+    sys::LockEnterLeave lock( m_lock );
+    
+    std::map< intptr_t, Connection* >::iterator found = m_connections.find( connection->id() );
+    if ( found != m_connections.end() )
+    {
+        m_connections.erase( found );
+        
+        if ( needDelete )
+        {
+            delete connection;
+        }
+    }
+}
+
 void Server::ConnectionThread::routine( )
 {
     TRACE_ENTERLEAVE( );
@@ -172,7 +207,12 @@ Server::ConnectionThread::~ConnectionThread( )
 {
     TRACE_ENTERLEAVE( );
 
-    m_base.stop();
+    //m_base.stop();
+    
+    while ( !m_connections.empty() )
+    {
+        remove( m_connections.begin()->second, true );
+    }
 }
 
 Server::ProcessPool::ProcessPool( Server& server )
@@ -367,6 +407,10 @@ void Server::ProcessPool::Thread::routine()
             //  process data
             //
             m_pool.handle( context, *this );
+        }
+        else
+        {
+            return;
         }
     }
 }

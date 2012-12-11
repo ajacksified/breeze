@@ -146,12 +146,18 @@ public:
             return m_base;
         }
         
+        void add( Connection* connection );
+        void remove( Connection* connection, bool needDelete = false );
+        
     protected:
         virtual void routine();
     
     private:
         libevent::Base m_base;
         Server& m_server;
+        std::map< intptr_t, Connection* > m_connections;
+        sys::Lock m_lock;
+        
     };
 
     void setConnectionThreadCount( unsigned int connectionThreadCount )
@@ -251,6 +257,9 @@ public:
         }
         
         void handle( Context* context, const Thread& thread );
+        
+        
+        
 
     private:
         std::deque< Context* > m_queue;

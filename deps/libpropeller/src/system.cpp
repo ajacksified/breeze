@@ -301,7 +301,7 @@ namespace sys
     void Thread::stop ( )
     {
 
-        TRACE_ENTERLEAVE();
+        
         
         if ( !m_started )
         {
@@ -343,7 +343,6 @@ namespace sys
 
     void Thread::cleanup( )
     {
-        TRACE_ENTERLEAVE();
 
 #ifdef WIN32
         CloseHandle( m_handle );
@@ -431,7 +430,7 @@ namespace sys
 #ifdef WIN32
         ::shutdown( m_socket, SD_BOTH );
 #else
-        ::shutdown( m_socket, SHUT_RDWR );
+        ::shutdown( m_socket, SHUT_WR );
 #endif
         return StatusSuccess;
 
