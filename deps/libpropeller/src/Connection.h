@@ -45,7 +45,6 @@ public:
     void setDelete()
     {
         TRACE_ENTERLEAVE();
-        sys::LockEnterLeave lock( m_lock );
         
         if ( !m_delete )
         {
@@ -67,7 +66,6 @@ public:
 #ifdef _PROPELLER_DEBUG
             m_thread.remove( this );
 #endif            
-            
             scheduleDelete();
         }
     }

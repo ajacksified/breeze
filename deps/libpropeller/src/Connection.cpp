@@ -26,8 +26,6 @@ Connection::~Connection()
 {
     TRACE_ENTERLEAVE();
     
-    sys::LockEnterLeave lock( m_lock );    
-    
     if ( m_request )
     {
         delete m_request;
