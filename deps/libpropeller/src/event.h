@@ -207,6 +207,8 @@ namespace libevent
         void setWriteTimeout( unsigned int value );
         
         void scheduleDelete();
+        bool enabled();
+        void disable();
         
         void flush();
 
@@ -228,6 +230,7 @@ namespace libevent
         static void onErrorStatic( bufferevent* bev, short error, void* ctx );
         static void onDeleteStatic( evutil_socket_t fd, short what, void *arg );
         void onDelete();
+        
                 
     private:
         bufferevent* m_handle;

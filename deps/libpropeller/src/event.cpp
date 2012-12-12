@@ -132,16 +132,16 @@ namespace libevent
     {
         TRACE_ENTERLEAVE();
         
+        if ( m_handle )
+        {
+            bufferevent_free( m_handle );
+        }
+        
         if ( m_socket )
         {
             delete m_socket;
         }
         
-        if ( m_handle )
-        {
-            bufferevent_free( m_handle );
-        }
-
         if ( m_deleteEvent )
         {
             event_free( m_deleteEvent );
@@ -155,8 +155,9 @@ namespace libevent
     
     void Connection::write( const char* data, unsigned int length, bool close )
     {
-        
+        TRACE("%s", data );
         bufferevent_write( m_handle, data, length );
+    
         m_close = close;
     }
 
@@ -182,8 +183,8 @@ namespace libevent
     void Connection::close()
     {
         TRACE_ENTERLEAVE();
-        m_socket->shutdown();
-        bufferevent_disable( m_handle, EV_READ | EV_WRITE );
+        disable();
+        
         onClose();
     }   
     
@@ -287,13 +288,27 @@ namespace libevent
         ( ( Connection* ) arg )->onDelete();
     }
     
+    bool Connection::enabled()
+    {
+        if ( bufferevent_get_enabled( m_handle ) == 0 )
+        {
+            return false;
+        }
+        
+        return true;
+        
+    }
+    
+    void Connection::disable()
+    {
+        m_socket->shutdown();
+        bufferevent_disable( m_handle, EV_READ | EV_WRITE );
+    }
+    
     void Connection::onDelete()
     {
         TRACE_ENTERLEAVE();
      
-        //
-        //  suicide
-        //
         delete this;
     }
     

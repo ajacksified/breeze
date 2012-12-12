@@ -42,36 +42,15 @@ public:
         return m_request;
     }
     
-    void setDelete()
-    {
-        TRACE_ENTERLEAVE();
-        
-        if ( !m_delete )
-        {
-            m_delete = true;
-        }
-        
-        checkDelete();
-    }
+   
     
-    void checkDelete()
+    bool needClose() const
     {
-        TRACE_ENTERLEAVE();
-        
-        sys::LockEnterLeave lock( m_lock );
-        
-        if ( m_delete )
-        {
-            
-#ifdef _PROPELLER_DEBUG
-            m_thread.remove( this );
-#endif            
-            scheduleDelete();
-        }
+        return m_needClose;
     }
-    
-
-    //
+   
+    void checkDelete();
+     //
     //  increase reference count
     //
     void ref()
@@ -84,39 +63,40 @@ public:
     //
     //  decrease reference count
     //
-    void deref()
+    void deref( bool threadsafe = false )
     {
         TRACE_ENTERLEAVE();
         
         unsigned int count = sys::General::interlockedDecrement( &m_ref );
                 
+        TRACE("%d", count);
         if ( count == 1 ) 
         {
             //
             //  schedule deletion
             //  
-            scheduleDelete();
+            if ( threadsafe )
+            {
+                scheduleDelete();
+            }
+            else
+            {
+                delete this;
+            }
         }
         
     }
     
-    bool needClose() const
-    {
-        return m_needClose;
-    }
 
 
 private:
     Request* m_request;
     Server::ConnectionThread& m_thread;
     Server::ProcessPool& m_pool;
-    
-    unsigned int m_ref;
     bool m_needClose;
-    bool m_delete;
     bool m_initialized;
     sys::Lock m_lock;
-    
+    unsigned int m_ref;
 };
 
 class Request
@@ -163,8 +143,6 @@ public:
     }
     
     
-
-
 private:
     char m_method[64];
     char m_uri[128];
@@ -202,10 +180,8 @@ public:
 
     void addHeader( const char* name, const char* value );
     void setBody( const char* body = NULL, unsigned int length = 0 );
-    
-    void complete();
-    
     ~Response( );
+    
 private:
 
     Response( Connection& connection, unsigned int status = HttpProtocol::Ok );
@@ -216,7 +192,6 @@ private:
     Connection& m_connection;
     bool m_init;
     sys::Lock m_lock;
-    
 };
 
 

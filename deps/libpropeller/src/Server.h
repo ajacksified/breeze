@@ -258,9 +258,6 @@ public:
         
         void handle( Context* context, const Thread& thread );
         
-        
-        
-
     private:
         std::deque< Context* > m_queue;
         std::list< Thread* > m_threads;

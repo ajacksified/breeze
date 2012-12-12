@@ -17,9 +17,10 @@ limitations under the License.
 #include "Connection.h"
 
 Connection::Connection( Server::ConnectionThread& thread, Server::ProcessPool& pool, sys::Socket* socket )
- : libevent::Connection( socket, thread.base() ), m_request( NULL ), m_thread( thread ),  m_ref( 0 ), m_needClose( false ), m_pool( pool ), m_delete( false ), m_initialized( false )
+ : libevent::Connection( socket, thread.base() ), m_request( NULL ), m_thread( thread ),  m_needClose( false ), m_pool( pool ),  m_initialized( false ), m_ref( 0 )
  {
     TRACE_ENTERLEAVE();
+    ref();
  }
 
 Connection::~Connection()
@@ -54,10 +55,10 @@ void Connection::onWrite( )
     
     if ( m_close )
     {
-        close();
+        disable();
+        onClose();
     }
 }
-
 
 //
 //  on read callback  
@@ -65,7 +66,7 @@ void Connection::onWrite( )
 void Connection::onRead( )
 {
     TRACE_ENTERLEAVE( );
-
+    
     try
     {
         if ( !m_request )
@@ -81,6 +82,7 @@ void Connection::onRead( )
         //
         //  dispatch request for processing
         //
+        ref();
         
         m_pool.process( m_request, new Response( *this, HttpProtocol::Ok ) );
 
@@ -113,10 +115,18 @@ void Connection::onRead( )
     }
 }
 
+void Connection::checkDelete()
+{
+    TRACE_ENTERLEAVE();
+    
+    deref( true );
+}
+
 void Connection::onClose( )
 {
     TRACE_ENTERLEAVE();
-    setDelete();
+    
+    deref();
 }
 
 Request::~Request()
@@ -307,8 +317,9 @@ Response::Response( Connection& connection, unsigned int status )
 Response::~Response( )
 {
     TRACE_ENTERLEAVE();
+    
+    m_connection.checkDelete( );
  }
-
 
 void Response::init( )
 {
@@ -343,13 +354,6 @@ void Response::addHeader( const char* name, const char* value )
     m_connection.write( "\r\n", 2 );
 }
 
-void Response::complete( )
-{
-    TRACE_ENTERLEAVE();
-    
-    m_connection.checkDelete();
-}
-
 void Response::setBody( const char* body, unsigned int length  )
 {
     init();
@@ -358,6 +362,7 @@ void Response::setBody( const char* body, unsigned int length  )
     {
         addHeader( "Content-Length", "0");
         m_connection.write( "\r\n", 2, m_connection.needClose() );
+        
         return;
     }
 
@@ -366,4 +371,5 @@ void Response::setBody( const char* body, unsigned int length  )
     addHeader( "Content-Length", buffer );
     m_connection.write( "\r\n", 2 );
     m_connection.write( body, length ? length : strlen( body ), m_connection.needClose() );
+    
 }

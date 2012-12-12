@@ -360,8 +360,6 @@ Server::ProcessPool::Context::Context( Request* _request, Response* _response )
 Server::ProcessPool::Context::~Context( )
 {
     delete request;
-    
-    response->complete();
     delete response;
 }
 
