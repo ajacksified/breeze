@@ -20,7 +20,7 @@ limitations under the License.
 
 
 Server::Server( unsigned int port )
-: libevent::Listener( port ), m_connectionThreadCount( 1 ), m_connectionReadTimeout( 0 ), m_connectionWriteTimeout( 0 ),  m_pool( *this ), m_poolThreadCount( 1 ), m_timerThread( NULL )
+: libevent::Listener( port ), m_connectionThreadCount( 10 ), m_connectionReadTimeout( 0 ), m_connectionWriteTimeout( 0 ),  m_pool( *this ), m_poolThreadCount( 25 ), m_timerThread( NULL )
 {
     TRACE_ENTERLEAVE( );
 
@@ -130,7 +130,11 @@ void Server::onAccept( )
     //
     try
     {
-       thread->add( new Connection( *thread, m_pool, socket ) );
+        Connection* connection = new Connection( *thread, m_pool, socket );
+        
+        #ifdef _PROPELLER_DEBUG
+            thread->add( connection );
+        #endif            
     }
     catch (...)
     {

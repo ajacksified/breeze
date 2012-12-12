@@ -63,7 +63,11 @@ public:
         
         if ( m_delete )
         {
+            
+#ifdef _PROPELLER_DEBUG
             m_thread.remove( this );
+#endif            
+            
             scheduleDelete();
         }
     }
