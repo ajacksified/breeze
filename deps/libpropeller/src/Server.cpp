@@ -18,6 +18,8 @@ limitations under the License.
 #include "Connection.h"
 #include "HttpProtocol.h"
 
+namespace propeller
+{
 
 Server::Server( unsigned int port )
 : libevent::Listener( port ), m_connectionThreadCount( 10 ), m_connectionReadTimeout( 0 ), m_connectionWriteTimeout( 0 ),  m_pool( *this ), m_poolThreadCount( 25 ), m_timerThread( NULL )
@@ -435,4 +437,6 @@ void Server::TimerThread::onTimer()
     TRACE_ENTERLEAVE();
     
     ( ( TimerCallback ) m_callback.callback )( m_callback.data );
+}
+
 }

@@ -24,6 +24,12 @@ limitations under the License.
 //	HTTP request
 //
 
+namespace propeller
+{
+
+class Request;
+class Response;
+
 class Connection : public libevent::Connection
 {
     friend class Request;
@@ -87,8 +93,6 @@ public:
         
     }
     
-
-
 private:
     Request* m_request;
     Server::ConnectionThread& m_thread;
@@ -142,7 +146,6 @@ public:
         return m_headers;
     }
     
-    
 private:
     char m_method[64];
     char m_uri[128];
@@ -194,6 +197,7 @@ private:
     sys::Lock m_lock;
 };
 
+}
 
 #endif	/* _CONNECTION_H */
 

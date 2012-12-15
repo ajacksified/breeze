@@ -68,10 +68,11 @@ function breeze.addHandler(definition)
 end
 
 local function onRequest(req, res)
-    
+
     -- set up globals 
-    request = Request:new(req)
-    response = Response:new(res)
+    __res = {}
+    request = Request:new(__req)
+    response = Response:new(__res)
     
     breeze.logger:info("request: %s %s", request.method, request.url)
     
@@ -97,25 +98,24 @@ local function onRequest(req, res)
     
     -- not found    
     if not definition then
-        response:setStatus(404)
-        response:setBody(urlinfo.path .. " not found")
-        breeze.logger:info("response: %d", 404)
-        return
-    end
+        response.status = 404
+        response.body = urlinfo.path .. " not found"
+        response.headers["test"] = "test"
+    else
+        local handler = definition.handler
     
+        if not instanceOf(Handler, handler) then
+            --create handler instance
+            handler = handler:new(definition.options)
+            definition.handler = handler
+        end
 
-    local handler = definition.handler
-    
-    if not instanceOf(Handler, handler) then
-        --create handler instance
-        handler = handler:new(definition.options)
-        definition.handler = handler
+        -- handle request
+        handler:onRequest(urlinfo)            
     end
-    
-    -- handle request
-    handler:onRequest(urlinfo)
     
     breeze.logger:info("response: %d", response.status)
+    response:finish()
 end
 
 breezeApi.setOnRequest(onRequest)

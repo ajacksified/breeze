@@ -9,11 +9,10 @@ function StaticHandler:initialize(options)
 end
 
 function StaticHandler:onRequest(url)
-
-    local path = self.options.path..url.path
-    local file = io.open (path, "rb")
-
     
+    local path = self.options.path..url.path
+    local file = io.open(path, "rb")
+
     if not file then 
         response.body = url.path..' not found'
         response.status = 404
@@ -21,10 +20,10 @@ function StaticHandler:onRequest(url)
         response.body = file:read("*all")
         file:close()
         response.status = 200
-        response:setHeader('Content-Type', mimetypes.guess(path)) 
+        response.headers['Content-Type'] =  mimetypes.guess(path)
     end
         
-	response:setBody(response.body)
+	
 end
 
 

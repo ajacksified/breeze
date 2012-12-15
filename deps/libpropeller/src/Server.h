@@ -21,10 +21,14 @@ limitations under the License.
 #include "common.h"
 #include "event.h"
 
+
+
+namespace propeller
+{
+
 class Connection;
 class Request;
 class Response;
-
 
 class Server : public libevent::Listener
 {
@@ -73,7 +77,7 @@ public:
     //
     //  Thread callbacks
     //
-    typedef void ( API_CALL *OnThreadStarted ) ( void** threadData, void* data, void* lock );
+    typedef void ( API_CALL *OnThreadStarted ) ( void** threadData, void* data, sys::Lock* lock );
     
     typedef void ( API_CALL *ThreadCallback ) ( void* data, void* threadData );
     
@@ -304,4 +308,5 @@ private:
     
 };
 
+}
 #endif //_PROPELLER_SERVER_H_

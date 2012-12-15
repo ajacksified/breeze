@@ -234,6 +234,7 @@ int main( int argc, char** argv )
     breeze->addPath( BREEZE_PATH );
     std::string path;
     size_t lastSlash = script.rfind( '/' );
+        
     
     if ( lastSlash != std::string::npos )
     {
@@ -250,10 +251,17 @@ int main( int argc, char** argv )
         getcwd( buffer, sizeof( buffer ) );
         if ( path != "." )
         {
-            path = std::string( buffer ) + "/" + path;
+            std::string temp = path;
+            path = buffer;
+            
+            if ( temp.size() )
+            {
+                path = path + "/" + path;
+            }
         }
     }
     
+        
     //
     //  set working directory
     //

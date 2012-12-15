@@ -42,19 +42,18 @@ function Handler:onRequest(url)
 end
 
 function Handler:_send()
-	response:setStatus(response.status)
 
 	if type(response.body) == 'table' then
 	    -- encode table to json
 	    response.body = json.encode(response.body)
-	    response:setHeader('Content-Type', 'application/json')
+	    response.headers['Content-Type'] = 'application/json'
 	elseif response.type == 'text' then 
-	    response:setHeader('Content-Type', 'text/plain') 
+	    response.heasders['Content-Type']  = 'text/plain'
 	end
     
     -- add more content types here
     
-	response:setBody(response.body) 
+
 end
 
 function Handler:_handle(url)

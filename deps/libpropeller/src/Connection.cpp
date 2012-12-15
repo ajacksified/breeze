@@ -16,6 +16,9 @@ limitations under the License.
 
 #include "Connection.h"
 
+namespace propeller
+{
+
 Connection::Connection( Server::ConnectionThread& thread, Server::ProcessPool& pool, sys::Socket* socket )
  : libevent::Connection( socket, thread.base() ), m_request( NULL ), m_thread( thread ),  m_needClose( false ), m_pool( pool ),  m_initialized( false ), m_ref( 0 )
  {
@@ -372,4 +375,6 @@ void Response::setBody( const char* body, unsigned int length  )
     m_connection.write( "\r\n", 2 );
     m_connection.write( body, length ? length : strlen( body ), m_connection.needClose() );
     
+}
+
 }
