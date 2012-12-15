@@ -74,7 +74,19 @@ void Connection::onRead( )
     {
         if ( !m_request )
         {
-            m_request = new Request( *this );
+            try
+            {
+                m_request = new Request( *this );
+            }
+            catch (...)
+            {
+                TRACE_ERROR("failed to allocate memory", "");
+                Response response( *this, 500 );
+                response.setBody();
+                return;
+            }
+                    
+            
         }
 
         //
@@ -87,7 +99,21 @@ void Connection::onRead( )
         //
         ref();
         
-        m_pool.process( m_request, new Response( *this, HttpProtocol::Ok ) );
+        Response* response = NULL;
+
+        try
+        {
+            response = new Response( *this, HttpProtocol::Ok );
+        }
+        catch (...)
+        {
+            TRACE_ERROR("failed to allocate memory", "");
+            Response response( *this, 500 );
+            response.setBody();
+            return;
+        }
+        
+        m_pool.process( m_request, response );
 
         const char* header = m_request->header( "connection" );
 

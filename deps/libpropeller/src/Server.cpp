@@ -169,6 +169,8 @@ Server::ConnectionThread::ConnectionThread( Server& server )
 {
     TRACE_ENTERLEAVE();
     
+    m_stackSize = 1024 * 1024 * 4;
+    
     start();
 }
 
