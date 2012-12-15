@@ -191,8 +191,8 @@ void Breeze::onRequest( const propeller::Request* request, propeller::Response* 
     lua_getfield( lua, -1, "traceback");
     
     lua_getglobal( lua, "__onRequest" );
-    lua_pushlightuserdata( lua, ( void* ) request );
-    lua_pushlightuserdata( lua, response );
+    //lua_pushlightuserdata( lua, ( void* ) request );
+    //lua_pushlightuserdata( lua, response );
     
     setRequestData( lua, request );
     
@@ -202,7 +202,7 @@ void Breeze::onRequest( const propeller::Request* request, propeller::Response* 
     timeval start;
     gettimeofday( &start, NULL );
 
-    int result = lua_pcall( lua, 2, 0, -4 );
+    int result = lua_pcall( lua, 0, 0, -4 );
 
     if (result > 0)
     {
@@ -222,6 +222,15 @@ void Breeze::onRequest( const propeller::Request* request, propeller::Response* 
     }
     
     setResponseData( lua, response );
+    
+    lua_pushnil( lua );
+    lua_setglobal( lua, "__res" );
+    
+    lua_pushnil( lua );
+    lua_setglobal( lua, "__req" );
+    
+            
+    
         
     timeval end;
     gettimeofday( &end, NULL );
@@ -511,5 +520,7 @@ void Breeze::setResponseData( lua_State* lua, propeller::Response* response )
     const char* body = lua_tolstring( lua, -1, &length );
 
     response->setBody( body, length );
+    lua_pop( lua, 1 );
+    
     lua_pop( lua, 1 );
 }
