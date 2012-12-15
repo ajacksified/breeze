@@ -213,12 +213,16 @@ namespace sys
         
         static intptr_t currentId();
 
+    protected:
+        size_t m_stackSize;
+        
     private:
         void cleanup();
 
     private:
         THREAD_HANDLE m_handle;
         bool m_started;
+        
     };
 
     //

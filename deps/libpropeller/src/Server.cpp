@@ -390,6 +390,8 @@ Server::ProcessPool::Thread::Thread( ProcessPool& pool )
     : m_pool( pool ), m_data( NULL )
 {
     TRACE_ENTERLEAVE();
+    
+    m_stackSize = 1024 * 1024 * 4;
 }
 
 Server::ProcessPool::Thread::~Thread( )

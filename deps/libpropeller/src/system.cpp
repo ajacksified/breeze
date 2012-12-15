@@ -271,8 +271,9 @@ namespace sys
     //
 
     Thread::Thread ( )
-    : m_started ( false )
+    : m_started ( false ), m_stackSize( 0 )
     {
+        
     }
 
     Thread::~Thread ( )
@@ -287,7 +288,18 @@ namespace sys
 #ifdef WIN32
         m_handle = CreateThread( 0, 0, routineStatic, this, 0, NULL );
 #else
-        pthread_create( &m_handle, NULL, ( void *( * )( void* ) ) routineStatic, this );
+        pthread_attr_t attributes;
+        
+        pthread_attr_init( &attributes );
+        
+        if ( m_stackSize )
+        {
+            
+            int result = pthread_attr_setstacksize( &attributes, m_stackSize );
+            TRACE("set stack size: %d", result);
+        }
+        
+        pthread_create( &m_handle, &attributes, ( void *( * )( void* ) ) routineStatic, this );
 
 #endif
 
