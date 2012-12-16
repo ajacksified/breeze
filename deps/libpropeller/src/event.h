@@ -172,7 +172,7 @@ namespace libevent
         Connection( sys::Socket* socket, const Base& base );
         virtual ~Connection();
 
-        void assign( const Base& base );
+        void assign( );
         virtual void onRead()
         {
             
@@ -238,6 +238,8 @@ namespace libevent
         intptr_t m_id;
         event* m_deleteEvent;
         const Base& m_base;
+        
+        
     };
 
    
