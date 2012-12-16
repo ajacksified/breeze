@@ -134,7 +134,6 @@ void Connection::onRead( )
             delete m_request;
 
             m_request = NULL;
-            m_needClose = true;
             
             {
                 Response response( *this, status );
@@ -387,6 +386,11 @@ void Response::addHeader( const char* name, const char* value )
 void Response::setBody( const char* body, unsigned int length  )
 {
     init();
+    
+    if ( m_status > 400 )
+    {
+        m_connection.setClose();
+    }
     
     if ( !body )
     {

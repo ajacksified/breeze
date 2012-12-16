@@ -21,11 +21,6 @@ limitations under the License.
 
 #include <Connection.h>
 
-Breeze* Breeze::m_instance = NULL;
-
-//
-//  lua api functions
-//
 int setOnRequest( lua_State* lua )
 {
     TRACE_ENTERLEAVE();
@@ -33,98 +28,11 @@ int setOnRequest( lua_State* lua )
     lua_setglobal( lua, "__onRequest" );
 }
 
-int requestGetBody( lua_State* lua )
-{
-    void* request = lua_touserdata( lua, -1 );
-    lua_pop( lua, 1 );
-    
-    lua_pushstring( lua, propeller_requestGetBody( request ) );
-    
-    return 1;
-}
-
-int requestGetUrl( lua_State* lua )
-{
-    void* request = lua_touserdata( lua, -1 );
-    lua_pop( lua, 1);
-
-    lua_pushstring( lua, propeller_requestGetUri( request ) );
-
-    return 1;
-}
-
-int requestGetMethod( lua_State* lua )
-{
-    void* request = lua_touserdata( lua, -1 );
-    lua_pop( lua, 1 );
-
-    lua_pushstring( lua, propeller_requestGetMethod( request ) );
-
-    return 1;
-}
-
-int requestGetHeader( lua_State* lua )
-{
-    void* request = lua_touserdata( lua, -2 );
-    lua_remove( lua, -2 );
-
-    const char* header = propeller_requestGetHeader( request, lua_tostring( lua, -1 ) );
-    lua_remove( lua, -1 );
-
-    lua_pushstring( lua, header );
-    return 1;
-}
-
-int responseSetBody( lua_State* lua )
-{
-    void* response = lua_touserdata( lua, -2 );
-    lua_remove( lua, -2 );
-    
-    size_t length = 0;
-    const char* body = luaL_tolstring( lua, -1, &length );
-
-    propeller_responseSetBody( response, body, length );
-    lua_remove( lua, -1 );
-
-    return 0;
-}
-
-int responseSetHeader( lua_State* lua )
-{
-    void* response = lua_touserdata( lua, -3 );
-    lua_remove( lua, -3 );
-
-    const char* name = lua_tostring( lua, -2 );
-    const char* value = lua_tostring( lua, -1 );
-
-    propeller_responseSetHeader( response, name, value );
-    lua_remove( lua, -1 );
-    lua_remove( lua, -2 );
-
-    return 0;
-}
-
-int responseSetStatus( lua_State* lua )
-{
-    void* response = lua_touserdata( lua, -2 );
-    lua_remove( lua, -2 );
-
-    unsigned int status = lua_tonumber( lua, -1 );
-    lua_remove( lua, -1 );
-
-    propeller_responseSetStatus( response, status );
-    
-    return 0;
-}
+Breeze* Breeze::m_instance = NULL;
 
 Breeze::Breeze( unsigned int port )
 : m_development( false ), m_dataCollectTimeout( 20 ), m_server( port )
 {
-//    m_server = propeller_serverCreate( port );
-//
-//    propeller_serverSetOnRequestCallback( m_server, onRequestStatic, this );
-//    propeller_serverSetOnThreadStartedCallback( m_server, onThreadStartedStatic, this );
-    
     m_server.setOnRequestCallback( onRequestStatic, this );
     m_server.setOnThreadStartedCallback( onThreadStartedStatic, this );
 }
@@ -159,7 +67,6 @@ void Breeze::onRequest( const propeller::Request* request, propeller::Response* 
     ThreadState* state = ( ThreadState* ) threadData;
     lua_State* lua = state->lua;
     
-    
     sys::LockEnterLeave lock( *state->lock );
     
     //
@@ -177,8 +84,8 @@ void Breeze::onRequest( const propeller::Request* request, propeller::Response* 
             //
             //  error executing lua
             //
-            propeller_responseSetStatus( response, 500 );
-            propeller_responseSetBody( response, lua_tostring( lua, -1 ), 0 );
+            response->setStatus( 500 );
+            response->setBody( lua_tostring( lua, -1 ) );
             lua_pop( lua, 1 );
             return;
         }
@@ -191,8 +98,6 @@ void Breeze::onRequest( const propeller::Request* request, propeller::Response* 
     lua_getfield( lua, -1, "traceback");
     
     lua_getglobal( lua, "__onRequest" );
-    //lua_pushlightuserdata( lua, ( void* ) request );
-    //lua_pushlightuserdata( lua, response );
     
     setRequestData( lua, request );
     
@@ -202,7 +107,7 @@ void Breeze::onRequest( const propeller::Request* request, propeller::Response* 
     timeval start;
     gettimeofday( &start, NULL );
 
-    int result = lua_pcall( lua, 0, 0, -4 );
+    int result = lua_pcall( lua, 0, 0, -2 );
 
     if (result > 0)
     {
@@ -210,8 +115,7 @@ void Breeze::onRequest( const propeller::Request* request, propeller::Response* 
         //  error executing lua
         //
         TRACE_ERROR("%s", lua_tostring( lua, -1 ));
-        //propeller_responseSetStatus( response, 500 );
-        
+
         response->setStatus( 500 );
         if ( m_development )
         {
@@ -221,17 +125,15 @@ void Breeze::onRequest( const propeller::Request* request, propeller::Response* 
         lua_pop( lua, 1 );
     }
     
+    //
+    //  remove debug.traceback from stack
+    //
+    lua_remove( lua, -1 );
+    lua_remove( lua, -2 );
+
+    
     setResponseData( lua, response );
     
-    lua_pushnil( lua );
-    lua_setglobal( lua, "__res" );
-    
-    lua_pushnil( lua );
-    lua_setglobal( lua, "__req" );
-    
-            
-    
-        
     timeval end;
     gettimeofday( &end, NULL );
     
@@ -241,21 +143,15 @@ void Breeze::onRequest( const propeller::Request* request, propeller::Response* 
 
     mtime = ( ( seconds) * 1000 + useconds / 1000.0 ) + 0.5;
     
-    
-//    //
-//    //  collect high level metrics
-//    //
+    //
+    //  collect high level metrics
+    //
     state->metrics.collect( 
         mtime, 
-        propeller_responseGetStatus( response ) > 400,
-        propeller_requestGetUri( request ) 
+        response->status() > 500,    
+        request->uri()
     );
     
-    //
-    //  remove debug.traceback from stack
-    //
-    lua_remove( lua, -1 );
-    lua_remove( lua, -2 );
     
  }
 
@@ -322,14 +218,6 @@ void Breeze::loadLibraries( lua_State* lua )
      //
      static const luaL_Reg functions[] = {
         {"setOnRequest", setOnRequest},
-//        {"requestGetBody", requestGetBody},
-//        {"requestGetUrl", requestGetUrl},
-//        {"requestGetHeader", requestGetHeader},
-//        {"requestGetMethod", requestGetMethod},
-//        {"responseSetStatus", responseSetStatus},
-//        {"responseSetBody", responseSetBody},
-//        {"responseSetHeader", responseSetHeader},
-
         {NULL, NULL}
     };
 
@@ -392,10 +280,7 @@ void Breeze::loadLibraries( lua_State* lua )
  {
      //
      // hardcode 30 seconds read and write timeouts
-     //
-//     propeller_serverSetConnectionReadTimeout( m_server, 30 );
-//     propeller_serverSetConnectionWriteTimeout( m_server, 30 );
-     
+     //     
      m_server.setConnectionReadTimeout( 30 );
      m_server.setConnectionWriteTimeout( 30 );
      
@@ -405,17 +290,12 @@ void Breeze::loadLibraries( lua_State* lua )
          //
          // limit number of threads in development mode
          //
-//         propeller_serverSetPoolThreadCount( m_server, 1 );
-//         propeller_serverSetConnectionThreadCount( m_server, 1 );
          m_server.setPoolThreadCount( 1 );
          m_server.setConnectionThreadCount( 1 );
      }
      
+     m_server.setTimer( m_dataCollectTimeout, onTimerStatic, ( void* ) this );
       
-     //propeller_serverSetTimer( m_server, m_dataCollectTimeout, onTimerStatic, ( void* ) this );
-          
-     //propeller_serverStart( m_server );
-     
      m_server.start();
  }
  

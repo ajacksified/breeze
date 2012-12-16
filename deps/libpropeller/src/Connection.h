@@ -48,7 +48,11 @@ public:
         return m_request;
     }
     
-   
+
+    void setClose()
+    {
+        m_needClose = true;
+    }
     
     bool needClose() const
     {
