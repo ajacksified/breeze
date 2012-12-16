@@ -15,10 +15,7 @@ limitations under the License.
  */
 
 #include "Breeze.h"
-
-#include <propeller.h>
 #include <lua_cjson.h>
-
 #include <Connection.h>
 
 int setOnRequest( lua_State* lua )
@@ -151,8 +148,6 @@ void Breeze::onRequest( const propeller::Request* request, propeller::Response* 
         response->status() > 500,    
         request->uri()
     );
-    
-    
  }
 
 void Breeze::onThreadStartedStatic( void** threadData, void* data,  sys::Lock* lock )
@@ -306,8 +301,6 @@ void Breeze::loadLibraries( lua_State* lua )
  
  void Breeze::onTimer()
  {
-     TRACE_ENTERLEAVE();
-     
      //
      // collect statistics from all threads
      //
@@ -318,7 +311,6 @@ void Breeze::loadLibraries( lua_State* lua )
          sys::LockEnterLeave lock( *state->lock );
          m_metrics.add( state->metrics, i == m_threadStates.begin() ? m_dataCollectTimeout : 0 );
          state->metrics.reset();
-         
      }
      
      //
