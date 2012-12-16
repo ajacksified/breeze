@@ -133,6 +133,7 @@ void Server::onAccept( )
     try
     {
         Connection* connection = new Connection( *thread, m_pool, socket );
+        connection->enable();
         
         #ifdef _PROPELLER_DEBUG
             thread->add( connection );
@@ -169,7 +170,7 @@ Server::ConnectionThread::ConnectionThread( Server& server )
 {
     TRACE_ENTERLEAVE();
     
-    m_stackSize = 1024 * 1024 * 4;
+    m_stackSize = 1024 * 1024 * 2;
     
     start();
 }

@@ -172,7 +172,7 @@ namespace libevent
         Connection( sys::Socket* socket, const Base& base );
         virtual ~Connection();
 
-        void assign( );
+        void enable( );
         virtual void onRead()
         {
             

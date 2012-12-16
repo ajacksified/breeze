@@ -25,8 +25,6 @@ Connection::Connection( Server::ConnectionThread& thread, Server::ProcessPool& p
     TRACE_ENTERLEAVE();
     ref();
     
-    assign();
-    
  }
 
 Connection::~Connection()

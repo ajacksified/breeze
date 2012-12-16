@@ -108,7 +108,18 @@ namespace libevent
         TRACE_ENTERLEAVE();
         General::setSocketNonBlocking( *socket );
         
+        m_handle = bufferevent_socket_new( m_base, m_socket->s(), BEV_OPT_THREADSAFE );
+
+        if ( !m_handle )
+        {
+            TRACE_ERROR( "failed to create buffered event", "" );
+            throw GeneralError;
+        }
         
+        bufferevent_setcb( m_handle, onReadStatic, onWriteStatic, onErrorStatic, this );
+        
+        m_input = bufferevent_get_input( m_handle );
+        m_output = bufferevent_get_output( m_handle );
      }
 
     Connection::~Connection()
@@ -131,28 +142,15 @@ namespace libevent
         }
     }
     
-    void Connection::assign( )
+    void Connection::enable()
     {
-        m_handle = bufferevent_socket_new( m_base, m_socket->s(), BEV_OPT_THREADSAFE );
-
-        if ( !m_handle )
-        {
-            TRACE_ERROR( "failed to create buffered event", "" );
-            throw GeneralError;
-        }
-        
-        bufferevent_setcb( m_handle, onReadStatic, onWriteStatic, onErrorStatic, this );
-        
         if ( bufferevent_enable( m_handle, EV_READ | EV_WRITE  ) != 0 ) 
         {
             TRACE_ERROR( "bufferevent_enable failed", "" );
             throw GeneralError;
         }
-     
-        m_input = bufferevent_get_input( m_handle );
-        m_output = bufferevent_get_output( m_handle );
     }
-    
+   
 
     unsigned int Connection::read( char* data, unsigned int length )
     {
