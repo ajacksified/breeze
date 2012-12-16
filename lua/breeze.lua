@@ -100,7 +100,6 @@ local function onRequest(req, res)
     if not definition then
         response.status = 404
         response.body = urlinfo.path .. " not found"
-        response.headers["test"] = "test"
     else
         local handler = definition.handler
     
