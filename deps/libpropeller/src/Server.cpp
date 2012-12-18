@@ -38,7 +38,6 @@ Server::~Server( )
     stop( );
     
     libevent::General::shutdown();
-    
 }
 
 void Server::stop( )
@@ -52,7 +51,7 @@ void Server::stop( )
 
     m_base.stop( );
 
-    for ( std::deque< ConnectionThread* >::iterator i = m_connectionThreads.begin(); i != m_connectionThreads.end(); i++ )
+    for ( std::list< ConnectionThread* >::iterator i = m_connectionThreads.begin(); i != m_connectionThreads.end(); i++ )
     {
         (*i)->base().stop();
     }

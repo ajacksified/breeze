@@ -263,7 +263,7 @@ public:
         void handle( Context* context, const Thread& thread );
         
     private:
-        std::deque< Context* > m_queue;
+        std::list< Context* > m_queue;
         std::list< Thread* > m_threads;
         sys::Lock m_lock;
         sys::Semaphore m_semaphore;
@@ -290,7 +290,7 @@ private:
 
 private:
     libevent::Base m_base;
-    std::deque< ConnectionThread* > m_connectionThreads;
+    std::list< ConnectionThread* > m_connectionThreads;
     unsigned int m_connectionThreadCount;
 
     unsigned int m_connectionReadTimeout;
