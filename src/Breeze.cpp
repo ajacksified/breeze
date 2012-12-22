@@ -28,7 +28,7 @@ int setOnRequest( lua_State* lua )
 Breeze* Breeze::m_instance = NULL;
 
 Breeze::Breeze( unsigned int port )
-: m_development( false ), m_dataCollectTimeout( 20 ), m_server( port )
+: m_development( false ), m_dataCollectTimeout( 20 ), m_server( port ), m_connectionThreads( 20 ), m_poolThreads( 30 )
 {
     m_server.setOnRequestCallback( onRequestStatic, this );
     m_server.setOnThreadStartedCallback( onThreadStartedStatic, this );
@@ -101,8 +101,6 @@ void Breeze::onRequest( const propeller::Request* request, propeller::Response* 
     //
     //  measure how long did the request take
     //
-    timeval start;
-    gettimeofday( &start, NULL );
 
     int result = lua_pcall( lua, 0, 0, -2 );
 
@@ -127,24 +125,16 @@ void Breeze::onRequest( const propeller::Request* request, propeller::Response* 
     //
     lua_remove( lua, -1 );
     lua_remove( lua, -2 );
-
     
     setResponseData( lua, response );
     
-    timeval end;
-    gettimeofday( &end, NULL );
-    
-    long mtime, seconds, useconds;
-    seconds  = end.tv_sec  - start.tv_sec;
-    useconds = end.tv_usec - start.tv_usec;
-
-    mtime = ( ( seconds) * 1000 + useconds / 1000.0 ) + 0.5;
+    unsigned int responseTime = sys::General::getMillisecondTimestamp() - request->timestamp();
     
     //
     //  collect high level metrics
     //
     state->metrics.collect( 
-        mtime, 
+        responseTime, 
         response->status() > 500,    
         request->uri()
     );
@@ -163,7 +153,6 @@ void Breeze::onThreadStartedStatic( void** threadData, void* data,  sys::Lock* l
      // create new lua environment
      //
      lua_State* lua = luaL_newstate();
-
 
      loadLibraries( lua );
 
@@ -288,6 +277,12 @@ void Breeze::loadLibraries( lua_State* lua )
          m_server.setPoolThreadCount( 1 );
          m_server.setConnectionThreadCount( 1 );
      }
+     else
+     {
+         m_server.setPoolThreadCount( m_poolThreads );
+         m_server.setConnectionThreadCount( m_connectionThreads );
+     }
+          
      
      m_server.setTimer( m_dataCollectTimeout, onTimerStatic, ( void* ) this );
       

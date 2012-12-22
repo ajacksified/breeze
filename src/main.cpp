@@ -14,18 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
 #include "Breeze.h"
 
 #include <signal.h>
-
 #include <execinfo.h>
+
 #include "version.h"
-
-
 
 void sigSegvHandler( int sig ) {
   void *array[10];
@@ -71,7 +66,7 @@ public:
             }
         }
 
-        usage += "\t\t" + m_description;
+        usage +=  m_description;
 
         return usage;
     }
@@ -161,17 +156,19 @@ int main( int argc, char** argv )
 
     signal( SIGSEGV, sigSegvHandler );
 
-    options.push_back( CmdOption( "", "--port", "listening port", "port", true ) );
-    options.push_back( CmdOption( "-h", "--help", "prints help", "help" ) );
-    options.push_back( CmdOption( "-v", "--version", "prints version", "version" ) );
-//    options.push_back( CmdOption( "", "--connectionThreads", "connection threads", "connectionThreads", true ) );
-  //  options.push_back( CmdOption( "", "--poolThreads", "connection threads", "poolThreads", true ) );
+    options.push_back( CmdOption( "", "--port", "\t\tlistening port", "port", true ) );
+    options.push_back( CmdOption( "-h", "--help", "\t\tprints help", "help" ) );
+    options.push_back( CmdOption( "-v", "--version", "\t\tprints version", "version" ) );
+    options.push_back( CmdOption( "", "--connectionThreads", "\tconnection threads", "connectionThreads", true ) );
+    options.push_back( CmdOption( "", "--poolThreads", "\tpool threads", "poolThreads", true ) );
     
     //
     //  parse command line
     //
     std::string script;
     unsigned int port = 8080;
+    unsigned int connectionThreads = 0;
+    unsigned int poolThreads = 0;
     
     try
     {
@@ -201,6 +198,11 @@ int main( int argc, char** argv )
                 if ( option->name( ) == "port" )
                 {
                     port = atoi( option->value( ) );
+                }
+                
+                if ( option->name( ) == "connectionThreads" )
+                {
+                    connectionThreads = atoi( option->value( ) );
                 }
                 
                 

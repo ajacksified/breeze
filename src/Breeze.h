@@ -79,6 +79,16 @@ private:
     void setRequestData( lua_State* lua, const propeller::Request* request );
     void setResponseData( lua_State* lua, propeller::Response* response );
     
+    void setConnectionThreads( unsigned int connectionThreads )
+    {
+        m_connectionThreads = connectionThreads;
+    }
+    
+    void setPoolThreads( unsigned int poolThreads )
+    {
+        m_poolThreads = poolThreads;
+    }
+    
     
 private:
     std::string m_script;
@@ -91,6 +101,9 @@ private:
     unsigned int m_dataCollectTimeout;
     std::list< std::string > m_paths;
     propeller::Server m_server;
+    unsigned int m_connectionThreads;
+    unsigned int m_poolThreads;
+    
 };
 
 #endif	/* _BREEZE_H */

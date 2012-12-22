@@ -22,6 +22,7 @@ limitations under the License.
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 
 //
 //	STL headers
