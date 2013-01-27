@@ -41,6 +41,16 @@ namespace sys
         time( &currentTime );
         return( unsigned int ) currentTime;
     }
+    
+    unsigned int General::getMillisecondTimestamp()
+    {
+        timeval time;
+        gettimeofday( &time, NULL );
+        
+        long timestamp = ( ( time.tv_sec ) * 1000 + time.tv_usec / 1000.0 ) + 0.5;
+        
+        return ( unsigned int ) timestamp;
+    }
 
     void* General::interlockedExchangePointer ( void** target, void* value )
     {
@@ -296,7 +306,6 @@ namespace sys
         {
             
             int result = pthread_attr_setstacksize( &attributes, m_stackSize );
-            TRACE("set stack size: %d", result);
         }
         
         pthread_create( &m_handle, &attributes, ( void *( * )( void* ) ) routineStatic, this );

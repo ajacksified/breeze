@@ -328,12 +328,12 @@ Request::Request( Connection& connection )
 {
     TRACE_ENTERLEAVE( );
 
-
     m_method[0] = 0;
     m_uri[0] = 0;
     m_protocol[0] = 0;
     m_header[0] = 0;
-
+    
+    m_timestamp = sys::General::getMillisecondTimestamp();
 }
 
 

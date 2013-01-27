@@ -81,6 +81,7 @@ namespace sys
     public:
         static unsigned int getLastError( );
         static unsigned int getTime( );
+        static unsigned int getMillisecondTimestamp();
 
         static void* interlockedExchangePointer( void** target, void* value );
         static void interlockedIncrement( unsigned int* target );

@@ -150,6 +150,11 @@ public:
         return m_headers;
     }
     
+    unsigned int timestamp() const
+    {
+        return m_timestamp;
+    }
+    
 private:
     char m_method[64];
     char m_uri[128];
@@ -163,6 +168,7 @@ private:
     bool m_parsedHeader;
     unsigned int m_read;
     Connection& m_connection;
+    unsigned int m_timestamp;
 };
 
 //
