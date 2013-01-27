@@ -251,6 +251,7 @@ int main( int argc, char** argv )
     {
         char buffer[256] = "/0";
         getcwd( buffer, sizeof( buffer ) );
+        
         if ( path != "." )
         {
             std::string temp = path;
@@ -258,12 +259,11 @@ int main( int argc, char** argv )
             
             if ( temp.size() )
             {
-                path = path + "/" + path;
+                path = path + "/" + temp;
             }
         }
     }
     
-        
     //
     //  set working directory
     //
