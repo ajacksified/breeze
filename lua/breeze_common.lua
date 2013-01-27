@@ -34,6 +34,7 @@ end
 -- route is specified as HTTP method combined with relative url. parts of url prefixed with ":" will get passed to action method of handler instance as request paramaters
 function breeze.addRoute(definition)
         
+        
     local method, pattern = "", ""
         
     -- break down route string
@@ -41,20 +42,28 @@ function breeze.addRoute(definition)
         if i == 1 then  method = w else pattern = w end
     end
     
-    -- remove trailing slash
-    pattern:rtrim("/")
+
 
     local path = pattern
     
     -- get base path
-    if pattern:find("/:") > 1 then
+    if pattern:find(":") > 1 then
        -- get base path
-           path = pattern:sub(1, pattern:find("/:") - 1)
-       end
+        path = pattern:sub(1, pattern:find(":") - 1)
+    end
     
-    -- check if there is a handler for this path
+    if #path > 1 then
+        -- remove trailing slash
+        path = path:rtrim("/")
+    end
+    
+        
+    
+    
+    
+       -- check if there is a handler for this path
     if not breeze.handlers[path] then
-        breeze.handlers[path] = definition.handler
+        breeze.handlers[path] = definition
     end
 
     definition.handler.addRoute{method = method, pattern = pattern, action = definition.action}
@@ -101,8 +110,10 @@ function breeze.onRequest()
         response.status = 404
         response.body = urlinfo.path .. " not found"
     else
+        
         local handler = definition.handler
-    
+        
+        
         if not instanceOf(Handler, handler) then
             --create handler instance
             handler = handler:new(definition.options)

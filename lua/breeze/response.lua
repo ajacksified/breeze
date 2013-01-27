@@ -6,6 +6,10 @@ function Response:initialize(response)
     self.headers = {}
 end
 
+function Response:setContentType(contentType)
+    self.headers['Content-Type'] = contentType
+end
+
 function Response:finish()
     self._response.status = self.status
     self._response.body = self.body

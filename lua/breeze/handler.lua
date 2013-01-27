@@ -46,15 +46,14 @@ function Handler:_send()
 	if type(response.body) == 'table' then
 	    -- encode table to json
 	    response.body = json.encode(response.body)
-	    response.headers['Content-Type'] = 'application/json'
+        response:setContentType('application/json')
 	elseif response.type == 'text' then 
-	    response.heasders['Content-Type']  = 'text/plain'
+        response:setContentType('text/plain')
 	end
     
     -- add more content types here
-    
-
 end
+
 
 function Handler:_handle(url)
     response.status = 200
@@ -64,12 +63,15 @@ function Handler:_handle(url)
     
     local methodHandler = nil
     
+    
     -- handle url pattern
     for index, route in ipairs(Handler.routes) do 
         if slashes == route.slashes and request.method == route.method then
             
             local pathTokens = url.path:split("/")
             local patternTokens = route.pattern:split("/")
+            
+            
                         
             for i, token in ipairs(patternTokens) do
                 if token:find(":") then request.params[token:ltrim(":")] = pathTokens[i] end
@@ -103,7 +105,6 @@ function Handler.static.addRoute(route)
     
     local match, slashes = route.pattern:gsub("/", "/")
     route.slashes = slashes
-    
     table.insert(Handler.static.routes, route)
 end
 
