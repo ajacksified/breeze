@@ -74,7 +74,7 @@ libs:
 	cd deps/libpropeller && make && cd ../lua && make && cd ../cjson && make
 
 obj/breeze: libs $(BREEZE_OBJECTS) 
-	$(CXX) -o $@ $(BREEZE_OBJECTS)  -Ldeps/libpropeller/obj -Ldeps/libpropeller/deps/libevent/.libs -Ldeps/lua/src -Ldeps/cjson $(LDFLAGS) $(PLATFORM_LDFLAGS) -pthread -lpropeller -llua -lcjson  -levent -levent_pthreads
+	$(CXX) -o $@ $(BREEZE_OBJECTS)  -Ldeps/libpropeller/obj -Ldeps/libpropeller/deps/libevent/.libs -Ldeps/lua/src -Ldeps/cjson $(LDFLAGS)  -pthread -lpropeller -llua -lcjson  -levent -levent_pthreads $(PLATFORM_LDFLAGS)
 
 install_breeze: obj/breeze
 	$(INSTALL) -d $(DESTDIR)$(prefix)/bin
