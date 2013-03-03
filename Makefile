@@ -40,7 +40,7 @@ endif
 ### Variables: ###
 
 CPPDEPS = -MT$@ -MF`echo $@ | sed -e 's,\.o$$,.d,'` -MD -MP
-BREEZE_CXXFLAGS = -Ideps/libpropeller/include -Ideps/libpropeller/src -Ideps/libpropeller/deps/libevent/include -Ideps/lua/src -Ideps/cjson -O2 -D_THREAD_SAFE -pthread \
+BREEZE_CXXFLAGS = -Ideps/libpropeller/include -Ideps/libpropeller/deps/libevent/include -Ideps/lua/src -Ideps/cjson -O2 -D_THREAD_SAFE -pthread \
 	$(CPPFLAGS) $(CXXFLAGS)
 BREEZE_OBJECTS =  \
 	obj/breeze_breeze.o \

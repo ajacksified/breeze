@@ -14,14 +14,47 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-#ifndef _VERSION_H_
-#define _VERSION_H_
+#ifndef _PROPELLER_COMMON_H_
+#define _PROPELLER_COMMON_H_
+
+///
+// C RunTime Header Files
+//
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+
+//
+//	STL headers
+//
+#include <string>
+#include <list>
+#include <map>
+#include <algorithm>
+
+//
+//	System independent wrappers
+//
+#include "system.h"
+
+//
+//  version header
+//
+#include "version.h"
 
 
-#define PROPELLER_NAME "Propeller"
-
-#define PROPELLER_VERSION "0.2"
 
 
+#ifdef WIN32
 
-#endif //_VERSION_H_
+#ifdef PROPELLER_DLL 
+    #define PROPELLER_API   __declspec(dllexport)
+#else 
+    #define PROPELLER_API   __declspec(dllimport)
+#endif  
+#else
+    #define PROPELLER_API
+#endif
+
+
+#endif //_COMMON_H_

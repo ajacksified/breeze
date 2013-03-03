@@ -14,38 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-#ifndef _COMMON_H_
-#define _COMMON_H_
-
-///
-// C RunTime Header Files
-//
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-
-//
-//	STL headers
-//
-#include <string>
-#include <list>
-#include <map>
-#include <deque>
-#include <algorithm>
-
-//
-//	System independent wrappers
-//
-#include "system.h"
-
-//
-//	Trace function
-//
-#include "trace.h"
-//
-//  version header
-//
-#include "version.h"
+#ifndef _VERSION_H_
+#define _VERSION_H_
 
 
-#endif //_COMMON_H_
+#define PROPELLER_NAME "Propeller"
+
+#define PROPELLER_VERSION "0.5"
+
+
+
+#endif //_VERSION_H_

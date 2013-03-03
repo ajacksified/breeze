@@ -38,17 +38,14 @@ RANLIB= ranlib
 ### Variables: ###
 
 CPPDEPS = -MT$@ -MF`echo $@ | sed -e 's,\.o$$,.d,'` -MD -MP
-PROPELLER_CXXFLAGS = -Iinclude -Ideps/libevent -Ideps/libevent/include -O2 -D_THREAD_SAFE -pthread $(CPPFLAGS) $(CXXFLAGS)
+PROPELLER_CXXFLAGS = -Iinclude/propeller -Ideps/libevent -Ideps/libevent/include -O2 -D_THREAD_SAFE -pthread $(CPPFLAGS) $(CXXFLAGS)
 PROPELLER_OBJECTS =  \
-	obj/propeller_propeller.o \
+	obj/propeller_HttpServer.o \
 	obj/propeller_HttpProtocol.o \
-	obj/propeller_Connection.o \
 	obj/propeller_Server.o \
 	obj/propeller_system.o \
 	obj/propeller_trace.o \
 	obj/propeller_event.o
-PROPELLER_HEADERS =  \
-	../include/propeller.h
 
 ### Conditionally set variables: ###
 
@@ -107,13 +104,10 @@ uninstall_propeller_headers:
 test: 
 	(cd test && $(MAKE) all)
 
-obj/propeller_propeller.o: src/propeller.cpp
+obj/propeller_HttpServer.o: src/HttpServer.cpp
 	$(CXX) -c -o $@ $(PROPELLER_CXXFLAGS) $(CPPDEPS) $<
 
 obj/propeller_HttpProtocol.o: src/HttpProtocol.cpp
-	$(CXX) -c -o $@ $(PROPELLER_CXXFLAGS) $(CPPDEPS) $<
-
-obj/propeller_Connection.o: src/Connection.cpp
 	$(CXX) -c -o $@ $(PROPELLER_CXXFLAGS) $(CPPDEPS) $<
 
 obj/propeller_Server.o: src/Server.cpp

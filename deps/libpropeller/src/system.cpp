@@ -17,8 +17,6 @@ limitations under the License.
 #include "system.h"
 #include "trace.h"
 
-
-
 namespace sys
 {
 
@@ -44,12 +42,17 @@ namespace sys
     
     unsigned int General::getMillisecondTimestamp()
     {
+        unsigned int timestamp;
+
+#ifdef WIN32
+        timestamp = GetTickCount();
+#else
         timeval time;
         gettimeofday( &time, NULL );
         
-        long timestamp = ( ( time.tv_sec ) * 1000 + time.tv_usec / 1000.0 ) + 0.5;
-        
-        return ( unsigned int ) timestamp;
+        timestamp = ( unsigned int ) ( ( time.tv_sec ) * 1000 + time.tv_usec / 1000.0 ) + 0.5;
+#endif        
+        return timestamp;
     }
 
     void* General::interlockedExchangePointer ( void** target, void* value )
@@ -63,22 +66,21 @@ namespace sys
 
     }
 
-    void General::interlockedIncrement( unsigned int* target )
+    unsigned int General::interlockedIncrement( unsigned int* target )
     {
 #ifdef WIN32
-
+    return InterlockedIncrement( target );
 #else
-    __sync_fetch_and_add( target, 1 );
+        return __sync_fetch_and_add( target, 1 );
 #endif
     }
 
     unsigned int General::interlockedDecrement( unsigned int* target )
     {
 #ifdef WIN32
-
+        return InterlockedDecrement( target );
 #else
-    return __sync_fetch_and_sub( target, 1 );
-    
+        return __sync_fetch_and_sub( target, 1 );
 #endif
     }
 
@@ -126,7 +128,7 @@ namespace sys
     void Lock::lock()
     {
  #ifdef WIN32
-        EnterCriticalSection( m_lock );
+        EnterCriticalSection( &m_lock );
 #else
         pthread_mutex_lock( &m_lock );
 #endif
@@ -136,7 +138,7 @@ namespace sys
     void Lock::unlock()
     {
  #ifdef WIN32
-        EnterCriticalSection( m_lock );
+        EnterCriticalSection( &m_lock );
 #else
         pthread_mutex_unlock( &m_lock );
 #endif
@@ -211,20 +213,12 @@ namespace sys
 #endif
     }
     
-    void Event::broadcast ( )
-    {
-#ifdef WIN32
-        //
-        //  whats the windows equivalent?
-        //
-#else
-        pthread_cond_broadcast( &m_condition );
-#endif
-    }
-
-
+    
     Semaphore::Semaphore()
     {
+#ifdef WIN32
+        m_handle = CreateSemaphore( NULL, 0, MAX_SEMAPHORE_COUNT, NULL );
+#else                    
 #ifdef __MACH__
         char name[16];
         sprintf( name, "%d", rand() % 1000 );
@@ -232,40 +226,46 @@ namespace sys
 #else
         sem_init( &m_handle, 0, 0 );
 #endif
-       
-
-       
+#endif
     }
 
     Semaphore::~Semaphore()
     {
+#ifdef WIN32
+        CloseHandle( m_handle );
+#else                
 #ifdef __MACH__
         sem_destroy( m_handle );
 #else
         sem_destroy( &m_handle );
 #endif
-
-        
+#endif
     }
 
     void Semaphore::post()
     {
+#ifdef WIN32
+        ReleaseSemaphore( m_handle, 1, NULL );
+#else        
 #ifdef __MACH__
         sem_post( m_handle );
 #else
         sem_post( &m_handle );
 #endif
-        
+#endif        
     }
 
     void Semaphore::wait()
     {
+#ifdef WIN32
+        WaitForSingleObject( m_handle, INFINITE );
+#else        
 #ifdef __MACH__
         sem_wait( m_handle );
 #else
         sem_wait( &m_handle );
 #endif
-        
+#endif        
     }
 
     void Semaphore::setValue( unsigned int value )
@@ -296,7 +296,7 @@ namespace sys
         m_started = true;
         
 #ifdef WIN32
-        m_handle = CreateThread( 0, 0, routineStatic, this, 0, NULL );
+        m_handle = CreateThread( 0, m_stackSize, routineStatic, this, 0, NULL );
 #else
         pthread_attr_t attributes;
         
@@ -316,25 +316,21 @@ namespace sys
 
     intptr_t Thread::currentId()
     {
+#ifdef WIN32
+        return ( intptr_t ) GetCurrentThreadId();
+#else
         return ( intptr_t ) pthread_self();
-        
+#endif
     }
+
     void Thread::stop ( )
     {
-
-        
         
         if ( !m_started )
         {
             return;
         }
         
-//#ifdef WIN32
-//        TerminateThread( m_handle, 1 );
-//#else
-//        pthread_cancel( m_handle );
-//#endif
-
         join();
         cleanup();
 
@@ -529,57 +525,156 @@ namespace sys
     {
         return m_socket;
     }
-
-    SocketSet::SocketSet ( )
-    : m_max ( 0 )
+        
+    ThreadPool::ThreadPool( )
+    : m_stop( false )
     {
-        FD_ZERO( &m_set );
-
+        TRACE_ENTERLEAVE( );
     }
 
-    SocketSet::SocketSet ( Socket& socket )
-    : m_max ( 0 )
+    ThreadPool::~ThreadPool( )
     {
-        FD_ZERO( &m_set );
-        add( socket );
+        TRACE_ENTERLEAVE( );
 
+        stop( );
     }
 
-    void SocketSet::add ( Socket& socket )
+    void ThreadPool::queue( Task* task )
     {
-        if ( socket.s( ) > m_max )
+        TRACE_ENTERLEAVE( );
+
+        if ( m_stop )
         {
-            m_max = socket.s( );
+            return;
         }
 
-        FD_SET( socket.s( ), &m_set );
-    }
-
-    unsigned int SocketSet::select ( SocketSet::ReadyType type, unsigned int _timeout )
-    {
-        int count = 0;
-
-        struct timeval timeout;
-
-        memset( &timeout, 0, sizeof( timeout ) );
-
-        timeout.tv_sec = _timeout;
-
-        if ( type == ReadyToRead )
         {
-            count = ::select( m_max + 1, &m_set, NULL, NULL, &timeout );
-        }
-        else
-        {
-            count = ::select( m_max + 1, NULL, &m_set, NULL, &timeout );
+            LockEnterLeave lock( m_lock );
+            m_queue.push_back( task );
         }
 
-        return count == SOCKET_ERROR ? 0 : count;
+        m_semaphore.post( );
     }
 
-    bool SocketSet::isSelected ( Socket& socket )
+    void ThreadPool::start( unsigned int threads )
     {
-        return FD_ISSET( socket.s( ), &m_set ) ? true : false;
+        TRACE_ENTERLEAVE( );
+        int i = 0;
+
+        while ( i < threads )
+        {
+            
+            Worker* thread = new Worker( *this );
+
+            //
+            //  invoke callback
+            //
+            
+            onThreadStart( *thread );
+            m_threads.push_back( thread );
+            i++;
+            thread->start( );
+        }
+    }
+
+    void ThreadPool::stop( )
+    {
+        TRACE_ENTERLEAVE( );
+
+        if ( m_stop )
+        {
+            return;
+        }
+
+        m_stop = true;
+
+        {
+            sys::LockEnterLeave lock( m_lock );
+
+            while ( !m_queue.empty( ) )
+            {
+                Task* task = m_queue.front( );
+                delete task;
+                m_queue.pop_front( );
+            }
+        }
+
+        m_semaphore.setValue( m_threads.size( ) );
+
+        while ( !m_threads.empty( ) )
+        {
+            Thread* thread = m_threads.front( );
+
+            delete thread;
+            m_threads.pop_front( );
+        }
+    }
+
+    ThreadPool::Task* ThreadPool::get( )
+    {
+        TRACE_ENTERLEAVE( );
+
+        //
+        //  wait for semaphore
+        //
+        m_semaphore.wait( );
+
+        if ( m_stop )
+        {
+            return NULL;
+        }
+
+        //
+        //  return next context to process or NULL if the queue is empty
+        //
+        LockEnterLeave lock( m_lock );
+
+        if ( m_queue.empty( ) )
+        {
+            return NULL;
+        }
+
+
+        Task* task = m_queue.front( );
+        m_queue.pop_front( );
+
+        return task;
+    }
+    
+
+    ThreadPool::Worker::Worker( ThreadPool& pool )
+    : m_pool( pool ), m_data( NULL )
+    {
+        TRACE_ENTERLEAVE( );
+
+        m_stackSize = 1024 * 1024 * 4;
+    }
+
+    ThreadPool::Worker::~Worker( )
+    {
+        TRACE_ENTERLEAVE( );
+    }
+    
+    void ThreadPool::Worker::routine( )
+    {
+        TRACE_ENTERLEAVE( );
+
+        for ( ;; )
+        {
+            Task* task = m_pool.get( );
+
+            if ( task )
+            {
+                //
+                //  process data
+                //
+                m_pool.onTaskProcess( task, *this );
+            }
+            else
+            {
+                return;
+            }
+        }
     }
 }
 

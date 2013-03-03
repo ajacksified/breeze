@@ -19,37 +19,37 @@ limitations under the License.
 
 #include "common.h"
 
+#include <propeller/HttpServer.h>
+
 //
 //  include lua
 //
 #define LUA_COMPAT_MODULE
 #include <lua.hpp>
 #include "Metrics.h"
-#include <Server.h>
+
 
 struct ThreadState
 {
-    ThreadState( lua_State* _lua, sys::Lock* _lock )
-    : lua( _lua ), lock( _lock )
+    ThreadState( lua_State* _lua )
+    : lua( _lua )
     {
     }
     
     lua_State* lua;
-    sys::Lock* lock;
     Metrics metrics;
 };
 
-class Breeze
+class Breeze : public propeller::Server::EventHandler
 {
 public:
     
     virtual ~Breeze();
     void run();
     
-
     static Breeze* instance();
     static Breeze* create( unsigned int port );
-
+    
     void setEnvironment( const char* environment );
     void addPath( const std::string& path )
     {
@@ -64,20 +64,12 @@ public:
 private:
     Breeze( unsigned int port );
     
-    static void onRequestStatic( const propeller::Request* request, propeller::Response* response, void* data, void* threadData );
-    void onRequest( const propeller::Request* request, propeller::Response* response, void* threadData );
-
-    static void onThreadStartedStatic( void** threadData, void* data, sys::Lock* lock );
-    void onThreadStarted( void** threadData, sys::Lock* lock );
-
+    virtual void onRequest( const propeller::Request& request, propeller::Response&, sys::ThreadPool::Worker& thread );
+    virtual void onThreadStarted( sys::ThreadPool::Worker& thread );
+    virtual void onTimer( unsigned int interval, void* data );
+    
     bool loadScript( lua_State* lua );
     void loadLibraries( lua_State* lua );
-    
-    static void onTimerStatic( void* data );
-    void onTimer();
-    
-    void setRequestData( lua_State* lua, const propeller::Request* request );
-    void setResponseData( lua_State* lua, propeller::Response* response );
     
     void setConnectionThreads( unsigned int connectionThreads )
     {
@@ -96,11 +88,10 @@ private:
     static Breeze* m_instance;
     bool m_development;
     std::string m_environment;
-    std::list< ThreadState* > m_threadStates;
     Metrics m_metrics;
     unsigned int m_dataCollectTimeout;
     std::list< std::string > m_paths;
-    propeller::Server m_server;
+    propeller::http::Server m_server;
     unsigned int m_connectionThreads;
     unsigned int m_poolThreads;
     

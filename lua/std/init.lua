@@ -8,6 +8,8 @@
 -- <li>TODO: pre-compile.</li>
 -- </ul>
 module ("std", package.seeall)
+local path = debug.getinfo(1, "S").source:match[[^@?(.*[\/])[^\/]-$]]
+package.path = package.path .. ";" .. path .. "/?.lua"
 
 for _, m in ipairs (require "modules") do
   require (m)

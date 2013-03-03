@@ -18,10 +18,13 @@ limitations under the License.
 
 #include "event.h"
 #include "common.h"
-#include "include/event2/event.h"
-#include "include/event2/bufferevent.h"
-#include "include/event2/bufferevent_struct.h"
-#include "bufferevent-internal.h"
+
+//
+//	Trace function
+//
+#include "trace.h"
+#include "event.h"
+
 
 namespace libevent
 {
@@ -44,7 +47,6 @@ namespace libevent
 #ifdef WIN32
      evthread_use_windows_threads();
 #else
-     TRACE("init threads", "");
      evthread_use_pthreads();
 #endif
      
@@ -54,6 +56,40 @@ namespace libevent
     void General::shutdown()
     {
         libevent_global_shutdown();
+    }
+
+    Base::Base( )
+    : m_base( NULL ), m_started( false )
+    {
+        m_base = event_base_new( );
+
+        evthread_make_base_notifiable( m_base );
+    }
+    void Base::start( bool )
+    {
+        m_started = true;
+
+        event_base_loop( m_base, EVLOOP_NO_EXIT_ON_EMPTY );
+    }
+    void Base::stop( ) const
+    {
+        TRACE_ENTERLEAVE( );
+
+        if ( m_base )
+        {
+            event_base_loopexit( m_base, NULL );
+        }
+
+    }
+    
+    Base::~Base( )
+    {
+        stop( );
+
+        if ( m_base )
+        {
+            event_base_free( m_base );
+        }
     }
 
     Listener::Listener( unsigned int port )
@@ -196,8 +232,6 @@ namespace libevent
     {
         TRACE_ENTERLEAVE();
 
-        TRACE("0x%x %d, eof: %d, error %d", m_handle, error, error & BEV_EVENT_EOF, error & BEV_EVENT_ERROR );
-        
         if ( error & BEV_EVENT_EOF || error & BEV_EVENT_ERROR)
         {
             close();
@@ -316,31 +350,35 @@ namespace libevent
         delete this;
     }
     
-    Timer::Timer(  unsigned int seconds )
-    : m_seconds( seconds ), m_timer( NULL )
+    Timer::Timer( const Base& base )
+    :  m_base( base )
     {
     }
     
-    void Timer::assign( const Base& base )
+    void Timer::add( unsigned int seconds, void* data )
     {
-        struct timeval timeout = { m_seconds, 0 };
+        struct timeval timeout = { seconds, 0 };
         
-        m_timer  = event_new( base, -1, EV_PERSIST, onTimerStatic, this );
-        
-        event_add( m_timer, &timeout );
+        event* timer = event_new( m_base, -1, EV_PERSIST, onTimerStatic, new Data( this, data, seconds ) );
+        m_timers.push_back( timer );
+        event_add( timer, &timeout );
     }
     
     Timer::~Timer()
     {
-        if ( m_timer )
+        while ( !m_timers.empty() )
         {
-            event_free( m_timer );
+            event* timer = m_timers.front();
+            Data* data = ( Data* ) event_get_callback_arg( timer );
+            delete data;
+            event_free( timer );
+            m_timers.pop_front();
         }
-        
     }
     
     void Timer::onTimerStatic( evutil_socket_t fd, short what, void *arg )
     {
-        ( ( Timer* ) arg )->onTimer();
+        Data* data = ( Data* )arg;
+        data->instance->onTimer( data->seconds, data->arg );
     }
 }

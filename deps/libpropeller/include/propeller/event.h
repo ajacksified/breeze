@@ -58,46 +58,12 @@ namespace libevent
 
     public:
 
-        Base()
-        : m_base( NULL ), m_started( false )
-        {
-            m_base = event_base_new();
-            
-//             event_config* cfg = event_config_new();
-//
-//            event_config_require_features(cfg, EV_FEATURE_O1);
-//
-//            m_base = event_base_new_with_config(cfg);
-//            
-//            event_config_free(cfg);
-            
-            evthread_make_base_notifiable( m_base );
-        }
-
-
-        void start( bool block = true )
-        {
-            m_started = true;
-            
-            event_base_loop( m_base, EVLOOP_NO_EXIT_ON_EMPTY );
-        }
+        Base();
+        ~Base();
+                
+        void start( bool block = true );
+        void stop() const;
         
-        void rescan() const
-        {
-            event_base_loopcontinue( m_base );
-        }
-
-        void stop() const
-        {
-            TRACE_ENTERLEAVE();
-            
-            if ( m_base )
-            {
-                event_base_loopexit( m_base, NULL );
-            }
-
-        }
-
         bool started() const
         {
             return m_started;
@@ -108,25 +74,8 @@ namespace libevent
             return m_base;
         }
 
-        ~Base()
-        {
-            stop();
-
-            if ( m_base )
-            {
-                event_base_free( m_base );
-            }
-        }
-
-        sys::Lock& lock()
-        {
-            return m_lock;
-        }
-        
-        
     private:
          event_base* m_base;
-         sys::Lock m_lock;
          bool m_started;
     };
 
@@ -153,22 +102,33 @@ namespace libevent
     class Timer
     {
     public:
-        Timer( unsigned int seconds );
-        void assign( const Base& base );
+        Timer( const Base& base );
+        void add( unsigned int seconds, void* data );
         ~Timer();
         static void onTimerStatic( evutil_socket_t fd, short what, void *arg );
-        virtual void onTimer() = 0;
+        virtual void onTimer( unsigned int seconds, void* data = NULL ) = 0;
         
+    private:
+        struct Data
+        {
+            Data( Timer* _instance, void* _arg, unsigned int _seconds )
+            : instance( _instance), arg(_arg), seconds( _seconds ) 
+            {
+            }
+            
+            Timer* instance;
+            void* arg;
+            unsigned int seconds;
+        };
+      
     private: 
-        struct event* m_timer;
-        unsigned int m_seconds;
+        const Base& m_base;
+        std::list< event* > m_timers;
     };
 
     class Connection
     {
     public:
-
-
         Connection( sys::Socket* socket, const Base& base );
         virtual ~Connection();
 
@@ -185,7 +145,6 @@ namespace libevent
         
         virtual void onError( short error );
 
-        
         unsigned int read( char* data, unsigned int length );
         
 
@@ -238,8 +197,6 @@ namespace libevent
         intptr_t m_id;
         event* m_deleteEvent;
         const Base& m_base;
-        
-        
     };
 
    

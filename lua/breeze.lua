@@ -4,7 +4,7 @@ require 'breeze_common'
 if not breeze.environment then
     breeze.environment = breezeApi.environment
 
-    breezeApi.setOnRequest(breeze.onRequest)
+    __onRequest = breeze.onRequest
 
     -- /metrics
     MetricsHandler = class('MetricsHandler', Handler)
